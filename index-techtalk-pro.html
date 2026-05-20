@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech4Impact — Recomendador de Charlas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --app-max-width: 560px;
+      --app-side-pad: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background:
+        radial-gradient(ellipse 75% 65% at 22% 45%, #2d0f6e 0%, transparent 65%),
+        radial-gradient(ellipse 50% 45% at 80% 80%, #1a0540 0%, transparent 55%),
+        #130a2a;
+      min-height: 100vh;
+      font-family: 'Gibson-Semibold', sans-serif;
+      color: #fff;
+    }
+
+    #root {
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px var(--app-side-pad) 46px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      width: 100%;
+      max-width: var(--app-max-width);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding: 0 4px;
+    }
+
+    .nx-wordmark {
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -.01em;
+    }
+
+    .powered {
+      font-size: 10px;
+      color: rgba(255,255,255,.25);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: var(--app-max-width);
+    }
+
+    .hero-deco {
+      position: absolute;
+      width: 52px;
+      opacity: .55;
+      pointer-events: none;
+      filter: drop-shadow(0 0 16px rgba(255,94,0,.25));
+    }
+
+    .hero-deco.left {
+      left: -8px;
+      top: 8px;
+      transform: rotate(-18deg);
+    }
+
+    .hero-deco.right {
+      right: -6px;
+      top: 36px;
+      transform: rotate(16deg);
+    }
+
+    .t4i-logo {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 16px;
+    }
+
+    .sub {
+      font-size: 13px;
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      line-height: 1.5;
+      padding: 0 8px;
+    }
+
+    .sub em {
+      color: #ff5e00;
+      font-style: normal;
+    }
+
+    .event-stats {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat-chip {
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      padding: 8px 7px;
+      text-align: center;
+    }
+
+    .stat-num {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      color: #fff;
+      text-shadow: 0 0 14px rgba(255,94,0,.3);
+    }
+
+    .stat-lbl {
+      display: block;
+      margin-top: 1px;
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.65);
+    }
+
+    .card {
+      background: rgba(28,16,64,.75);
+      border: 1px solid rgba(139,60,210,.25);
+      border-radius: 18px;
+      width: 100%;
+      max-width: var(--app-max-width);
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(139,60,210,.2);
+    }
+
+    .form-wrap {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .lbl {
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: rgba(255,255,255,.35);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .inp {
+      width: 100%;
+      background: rgba(115,33,166,.12);
+      border: 1px solid rgba(115,33,166,.35);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #fff;
+      font-family: 'Gibson-Semibold', sans-serif;
+      outline: none;
+      transition: border-color .2s, background .2s;
+      display: block;
+    }
+
+    .inp:focus {
+      border-color: rgba(255,94,0,.7);
+      background: rgba(115,33,166,.2);
+    }
+
+    .inp::-webkit-input-placeholder { color: rgba(180,150,255,.65); }
+    .inp::-moz-placeholder           { color: rgba(180,150,255,.65); opacity: 1; }
+    .inp:-ms-input-placeholder       { color: rgba(180,150,255,.65); }
+    .inp::placeholder                { color: rgba(180,150,255,.65); }
+
+    .hint {
+      font-size: 10px;
+      color: rgba(180,150,255,.4);
+      margin-top: 4px;
+    }
+
+    .snry-wrap {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .go {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      position: relative;
+      background: linear-gradient(90deg, #ff5e00, #7321a6);
+      background-size: 220% 220%;
+      animation: gradientShift 7s ease infinite;
+      color: #fff;
+      box-shadow: 0 0 12px #ff5e0055, 0 0 24px #ff5e0038;
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      cursor: pointer;
+      transition: box-shadow .3s, opacity .2s;
+    }
+
+    .go:hover {
+      box-shadow: 0 0 16px #ff5e0070, 0 0 30px #ff5e0040;
+      animation-duration: 4.8s;
+    }
+
+    .go:disabled {
+      opacity: .2;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .loading-wrap {
+      padding: 48px 20px;
+      text-align: center;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5e00;
+      animation: bop 1.2s ease-in-out infinite;
+    }
+
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes bop {
+      0%, 80%, 100% { transform: scale(.8); opacity: .3; }
+      40%            { transform: scale(1.2); opacity: 1; }
+    }
+
+    .ld-txt {
+      font-size: 12px;
+      color: rgba(255,255,255,.3);
+      margin-bottom: 3px;
+      letter-spacing: .04em;
+    }
+
+    .res-wrap { padding: 22px; }
+
+    .stage-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .particle-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      opacity: .42;
+      mix-blend-mode: normal;
+      filter: blur(.35px);
+      z-index: 0;
+    }
+
+    .pointer-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .blob {
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      filter: blur(45px);
+      opacity: .12;
+      z-index: 2;
+      animation: drift 14s ease-in-out infinite;
+    }
+
+    .blob.b1 { background: #ff5e00; top: -80px; left: -90px; }
+    .blob.b2 { background: #7a1ec7; bottom: -120px; right: -100px; animation-delay: -4s; }
+    .blob.b3 { background: #18c3ff; top: 38%; left: 65%; width: 260px; height: 260px; animation-delay: -8s; }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%      { transform: translate(20px, -16px) scale(1.05); }
+      66%      { transform: translate(-18px, 14px) scale(0.96); }
+    }
+
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .demo-box {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(8, 12, 30, .35);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .demo-btns {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .demo-btn {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.8);
+      background: linear-gradient(100deg, rgba(255,255,255,.06), rgba(255,255,255,.02), rgba(255,94,0,.05));
+      background-size: 220% 220%;
+      animation: gradientShift 11s ease infinite;
+      border-radius: 999px;
+      padding: 10px 8px;
+      font-size: 11px;
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Gibson-Semibold', sans-serif;
+      text-align: center;
+    }
+
+    .demo-btn:hover {
+      border-color: rgba(255,94,0,.6);
+      color: #fff;
+      background: linear-gradient(100deg, rgba(255,94,0,.2), rgba(122,30,199,.2), rgba(255,94,0,.2));
+      animation-duration: 5s;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.75);
+      margin-bottom: 12px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .model-panel {
+      margin-top: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01));
+    }
+
+    .panel-title {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.65);
+      margin-bottom: 10px;
+    }
+
+    .cmp-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,.85);
+      margin-bottom: 7px;
+    }
+
+    .delta-up { color: #4de3a3; }
+    .delta-down { color: #ff8f8f; }
+    .delta-flat { color: rgba(255,255,255,.6); }
+
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 40px;
+      gap: 6px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .sig-name {
+      font-size: 10px;
+      color: rgba(255,255,255,.75);
+    }
+
+    .sig-val {
+      font-size: 10px;
+      color: rgba(255,255,255,.8);
+      text-align: right;
+    }
+
+    .sig-bar {
+      grid-column: 1 / -1;
+      height: 3px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.12);
+      overflow: hidden;
+      margin-bottom: 2px;
+    }
+
+    .sig-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #18c3ff, #ff5e00);
+      border-radius: inherit;
+    }
+
+    .share {
+      margin-top: 10px;
+      width: 100%;
+      border: 1px solid rgba(24,195,255,.45);
+      background: rgba(24,195,255,.12);
+      color: #d9f7ff;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-radius: 50px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Gibson-Semibold', sans-serif;
+    }
+
+    .share:hover {
+      box-shadow: 0 0 18px rgba(24,195,255,.35);
+      background: rgba(24,195,255,.2);
+    }
+
+    .share-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+      margin: 10px 0 0 0;
+      flex-wrap: wrap;
+    }
+
+    .impact-share {
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(255,255,255,.08);
+      color: #f6f0ff;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-radius: 50px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Gibson-Semibold', sans-serif;
+    }
+
+    .impact-share:hover {
+      box-shadow: 0 0 18px rgba(255,255,255,.18);
+      background: rgba(255,255,255,.16);
+    }
+
+    .impact-share.tw {
+      border-color: rgba(84,172,255,.55);
+      background: rgba(84,172,255,.14);
+      color: #d9efff;
+    }
+
+    .impact-share.ig {
+      border-color: rgba(255,114,170,.62);
+      background: rgba(255,114,170,.14);
+      color: #ffe1ef;
+    }
+
+    .impact-share.li {
+      border-color: rgba(121,196,255,.62);
+      background: rgba(121,196,255,.14);
+      color: #dff2ff;
+    }
+
+    .share-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: rgba(214,201,255,.78);
+      letter-spacing: .02em;
+    }
+
+    @media (max-width: 430px) {
+      :root {
+        --app-max-width: 100%;
+        --app-side-pad: 10px;
+      }
+
+      .form-wrap { padding: 14px; gap: 12px; }
+      .res-wrap { padding: 14px; }
+      .go { font-size: 13px; padding: 12px; }
+      .topbar { margin-bottom: 18px; }
+      .sub { font-size: 12px; }
+      .hero-deco { width: 44px; opacity: .45; }
+      .event-stats { gap: 6px; }
+      .stat-num { font-size: 13px; }
+      .stat-lbl { font-size: 8px; }
+    }
+
+    @media (min-width: 900px) {
+      :root { --app-max-width: 620px; }
+      #root { padding-top: 24px; }
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(115,33,166,.15);
+      border: 1px solid rgba(115,33,166,.3);
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+
+    .av {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #ff5e00, #7321a6);
+      box-shadow: 0 0 16px #ff5e0066;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .pname {
+      font-size: 15px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .prole {
+      font-size: 11px;
+      color: rgba(180,150,255,.55);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .sec-lbl {
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: rgba(180,150,255,.4);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tk {
+      border: 1px solid rgba(115,33,166,.25);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 9px;
+      background: rgba(115,33,166,.07);
+    }
+
+    .tk.r1 {
+      border-color: rgba(255,94,0,.5);
+      background: rgba(255,94,0,.05);
+    }
+
+    .tk-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .rk {
+      font-size: 11px;
+      font-weight: 600;
+      padding-top: 2px;
+      min-width: 22px;
+      letter-spacing: .04em;
+    }
+
+    .tk-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      flex: 1;
+    }
+
+    .sc {
+      font-size: 22px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+      line-height: 1;
+    }
+
+    .bar-track {
+      height: 2px;
+      background: rgba(115,33,166,.2);
+      border-radius: 1px;
+      margin-bottom: 8px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 1px;
+      transition: width .9s ease;
+      width: 0;
+    }
+
+    .reason {
+      font-size: 11px;
+      color: rgba(180,150,255,.5);
+      line-height: 1.5;
+    }
+
+    .tk.r1 .reason { color: rgba(255,220,200,.7); }
+
+    .again {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid rgba(115,33,166,.35);
+      border-radius: 50px;
+      color: rgba(180,150,255,.45);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+      font-family: 'Gibson-Semibold', sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: all .2s;
+    }
+
+    .again:hover {
+      border-color: rgba(255,94,0,.5);
+      color: rgba(255,255,255,.6);
+      box-shadow: 0 0 15px #ff5e0033;
+    }
+
+    .ev-tag {
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: rgba(180,150,255,.2);
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .skill-btn {
+      padding: 6px 13px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-weight: 600;
+      letter-spacing: .04em;
+      transition: all .2s;
+      border: 1px solid rgba(115,33,166,.4);
+      background: rgba(115,33,166,.12);
+      color: rgba(180,150,255,.55);
+    }
+
+    .skill-btn:hover {
+      border-color: rgba(255,94,0,.5);
+      color: rgba(255,255,255,.7);
+    }
+
+    .skill-btn.active {
+      border: 1px solid #ff5e00;
+      background: linear-gradient(90deg, #ff5e0099, #7321a6aa);
+      background-size: 200% 200%;
+      animation: gradientShift 6.5s ease infinite;
+      color: #fff;
+      box-shadow: 0 0 10px #ff5e0044;
+    }
+
+    .skills-hint {
+      font-size: 10px;
+      color: rgba(180,150,255,.3);
+      margin-top: 6px;
+    }
+
+    .explain-card {
+      position: relative;
+      border-radius: 14px;
+      padding: 12px;
+      background:
+        linear-gradient(140deg, rgba(12, 9, 32, .92), rgba(27, 17, 59, .88)) padding-box,
+        linear-gradient(120deg, rgba(24,195,255,.65), rgba(255,94,0,.78), rgba(122,30,199,.7)) border-box;
+      border: 1px solid transparent;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 10px 26px rgba(4, 2, 13, .38);
+      overflow: hidden;
+    }
+
+    .explain-card::before {
+      content: "";
+      position: absolute;
+      top: -28px;
+      right: -42px;
+      width: 135px;
+      height: 135px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(24,195,255,.22) 0%, rgba(24,195,255,0) 68%);
+      pointer-events: none;
+    }
+
+    .explain-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(255,255,255,.05);
+      margin-bottom: 8px;
+    }
+
+    .explain-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: rgba(255,255,255,.95);
+      text-shadow: 0 1px 0 rgba(0,0,0,.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="stage-bg">
+    <canvas id="particle-canvas" class="particle-canvas"></canvas>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <canvas id="pointer-canvas" class="pointer-canvas"></canvas>
+  <div id="root"></div>
+
+  <script>
+    const { useState, useEffect, useRef } = React;
+    const E = React.createElement;
+
+    function initParticleBackground() {
+      const canvas = document.getElementById("particle-canvas");
+      const pointerCanvas = document.getElementById("pointer-canvas");
+      if (!canvas) return;
+
+      const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
+      const pctx = pointerCanvas ? pointerCanvas.getContext("2d", { alpha: true, desynchronized: true }) : null;
+      if (!ctx) return;
+
+      let width = 0;
+      let height = 0;
+      let particles = [];
+      let rafId = 0;
+      let lastTs = 0;
+      let frameCount = 0;
+      let fpsWindowStart = 0;
+      let densityScale = 1;
+      let dust = [];
+      let sparks = [];
+      const maxSparks = prefersReduced ? 35 : 85;
+      const pointer = { x: 0, y: 0, lastX: 0, lastY: 0, active: false, lastEmit: 0 };
+
+      function baseCountForScreen(w) {
+        if (prefersReduced) {
+          if (w < 430) return 120;
+          if (w < 900) return 180;
+          return 260;
+        }
+        if (w < 430) return 240;
+        if (w < 900) return 360;
+        return 520;
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        if (pointerCanvas && pctx) {
+          pointerCanvas.width = Math.floor(width * dpr);
+          pointerCanvas.height = Math.floor(height * dpr);
+          pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        const target = Math.floor(baseCountForScreen(width) * densityScale);
+        particles = Array.from({ length: target }, () => ({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.0 + 0.2,
+          a: Math.random() * 0.25 + 0.05,
+          s: Math.random() * 0.75 + 0.15,
+          t: Math.random() * Math.PI * 2,
+          pulse: Math.random() * Math.PI * 2,
+          hue: Math.random() > 0.75 ? 22 : Math.random() > 0.5 ? 198 : 278,
+        }));
+
+        const dustCount = Math.floor(target * 0.08);
+        dust = Array.from({ length: dustCount }, () => ({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 0.55 + 0.08,
+          t: Math.random() * Math.PI * 2,
+          a: Math.random() * 0.2 + 0.04,
+        }));
+      }
+
+      function emitSparks(x, y, power) {
+        const count = prefersReduced ? 1 : Math.min(4, Math.max(1, Math.floor(power * 0.045)));
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const speed = (Math.random() * 0.9 + 0.35) * (prefersReduced ? 0.6 : 0.9);
+          sparks.push({
+            x,
+            y,
+            vx: Math.cos(ang) * speed,
+            vy: Math.sin(ang) * speed,
+            life: Math.random() * 0.45 + 0.25,
+            size: Math.random() * 1.1 + 0.35,
+            hue: Math.random() > 0.25 ? 26 : 198,
+          });
+        }
+        if (sparks.length > maxSparks) sparks.splice(0, sparks.length - maxSparks);
+      }
+
+      function onPointerMove(evt) {
+        const x = evt.clientX;
+        const y = evt.clientY;
+        const dx = x - pointer.x;
+        const dy = y - pointer.y;
+        const speed = Math.sqrt(dx * dx + dy * dy);
+        pointer.lastX = pointer.x;
+        pointer.lastY = pointer.y;
+        pointer.x = x;
+        pointer.y = y;
+        pointer.active = true;
+
+        const now = performance.now();
+        if (now - pointer.lastEmit > (prefersReduced ? 90 : 45)) {
+          emitSparks(x, y, speed);
+          pointer.lastEmit = now;
+        }
+      }
+
+      function onMouseMove(evt) {
+        onPointerMove(evt);
+      }
+
+      function onTouchMove(evt) {
+        if (!evt.touches || !evt.touches.length) return;
+        onPointerMove(evt.touches[0]);
+      }
+
+      function step(ts) {
+        if (!fpsWindowStart) fpsWindowStart = ts;
+        if (!lastTs) lastTs = ts;
+        const dt = Math.min((ts - lastTs) / 16.67, 2.4);
+        lastTs = ts;
+        frameCount++;
+
+        // En vez de limpiar completamente, dejamos una estela tenue tipo polvo cósmico.
+        ctx.fillStyle = "rgba(14, 8, 30, 0.32)";
+        ctx.fillRect(0, 0, width, height);
+
+        // Acentuamos visibilidad con partículas brillantes y pequeño pulso.
+        ctx.globalCompositeOperation = "source-over";
+        if (pctx) {
+          pctx.clearRect(0, 0, width, height);
+          pctx.globalCompositeOperation = "source-over";
+        }
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const motionScale = prefersReduced ? 0.25 : 1;
+          p.t += 0.0035 * dt * motionScale;
+          p.pulse += 0.02 * dt * motionScale;
+          p.x += (Math.cos(p.t * 1.7) * 0.35 + Math.sin(p.t * 0.9) * 0.22) * p.s * dt * motionScale;
+          p.y += (Math.sin(p.t * 1.5) * 0.35 + Math.cos(p.t * 0.7) * 0.22) * p.s * dt * motionScale;
+
+          if (p.x < -6) p.x = width + 6;
+          if (p.x > width + 6) p.x = -6;
+          if (p.y < -6) p.y = height + 6;
+          if (p.y > height + 6) p.y = -6;
+
+          const pulseScale = 0.92 + Math.sin(p.pulse) * 0.16;
+          const radius = p.r * pulseScale;
+          const alpha = Math.max(0.03, Math.min(0.32, p.a * pulseScale));
+
+          ctx.beginPath();
+          ctx.fillStyle = "hsla(" + p.hue + ", 88%, 70%, " + alpha + ")";
+          ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Capas extra de estrellitas que titilan para lograr efecto de stardust.
+        for (let i = 0; i < dust.length; i++) {
+          const d = dust[i];
+          d.t += 0.025 * dt;
+          const tw = 0.6 + Math.sin(d.t) * 0.4;
+          ctx.beginPath();
+          ctx.fillStyle = "rgba(245, 250, 255, " + (d.a * tw) + ")";
+          ctx.arc(d.x, d.y, d.r * tw, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Estela de puntero tipo "fuego/chispas".
+        if (pointer.active) {
+          const t = (ts * 0.006) % 1;
+          const c = pctx || ctx;
+          c.strokeStyle = "rgba(255, 130, 45, " + (prefersReduced ? 0.18 : 0.32 + t * 0.16) + ")";
+          c.lineWidth = prefersReduced ? 1.2 : 2.1;
+          c.beginPath();
+          c.moveTo(pointer.lastX, pointer.lastY);
+          c.lineTo(pointer.x, pointer.y);
+          c.stroke();
+        }
+
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          const s = sparks[i];
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.vx *= 0.975;
+          s.vy *= 0.975;
+          s.life -= 0.03 * dt;
+
+          if (s.life <= 0) {
+            sparks.splice(i, 1);
+            continue;
+          }
+
+          const alpha = Math.max(0, Math.min(1, s.life));
+          const c = pctx || ctx;
+          c.beginPath();
+          c.fillStyle = "hsla(" + s.hue + ", 92%, 70%, " + (alpha * 0.72) + ")";
+          c.arc(s.x, s.y, s.size * alpha, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        ctx.globalCompositeOperation = "source-over";
+
+        if (ts - fpsWindowStart > 1800) {
+          const fps = (frameCount * 1000) / (ts - fpsWindowStart);
+          frameCount = 0;
+          fpsWindowStart = ts;
+
+          // Auto-throttle: preserva fluidez en hardware débil.
+          if (fps < 42 && densityScale > 0.35) {
+            densityScale *= 0.86;
+            resize();
+          } else if (fps > 57 && densityScale < 1) {
+            densityScale = Math.min(1, densityScale * 1.07);
+            resize();
+          }
+        }
+
+        rafId = window.requestAnimationFrame(step);
+      }
+
+      function onVisibility() {
+        if (document.hidden) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+          return;
+        }
+        if (!rafId) {
+          lastTs = 0;
+          fpsWindowStart = 0;
+          frameCount = 0;
+          rafId = window.requestAnimationFrame(step);
+        }
+      }
+
+      resize();
+      rafId = window.requestAnimationFrame(step);
+      window.addEventListener("resize", resize, { passive: true });
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      window.addEventListener("mousemove", onMouseMove, { passive: true });
+      window.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("pointerleave", () => { pointer.active = false; }, { passive: true });
+      window.addEventListener("mouseout", () => { pointer.active = false; }, { passive: true });
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+
+    initParticleBackground();
+
+    const T4I_LOGO = "https://tech4impact.naranjax.com/assets/tech4impact/logos/t4i_largo.png";
+    const DECO_RAYO = "https://tech4impact.naranjax.com/assets/tech4impact/logos/Rayo1.png";
+    const DECO_ANILLO = "https://tech4impact.naranjax.com/assets/tech4impact/logos/anillo.png";
+
+    const TALKS_FALLBACK = [
+      { id: "promos",  title: "Sabemos lo que querés antes de que lo sepas vos" },
+      { id: "voice_t", title: "Transferencias por voz" },
+      { id: "legal",   title: "Legal as Code + RA" },
+      { id: "mora",    title: "Agentes de voz: recupero de mora" },
+    ];
+
+    const SKILLS_FALLBACK = [
+      "Python", "JavaScript / TypeScript", "Machine Learning", "LLMs / IA Generativa",
+      "Data Engineering", "Agentes de IA", "NLP / Voice", "MLOps",
+      "Backend", "Frontend", "Mobile (iOS / Android)", "Product Management",
+      "UX / UI Design", "Fintech", "DevOps / Cloud", "APIs / Microservicios",
+      "RPA / Automatización", "Compliance / Legal Tech", "Arquitectura de Software", "Snowflake / Data Warehouse",
+    ];
+
+    function parseTalks(md) {
+      return md.split('\n')
+        .filter(l => l.startsWith('## '))
+        .map(l => { const [id, ...rest] = l.slice(3).split(' | '); return { id: id.trim(), title: rest.join(' | ').trim() }; })
+        .filter(t => t.id && t.title);
+    }
+
+    function parseSkills(md) {
+      return md.split('\n')
+        .filter(l => l.startsWith('- '))
+        .map(l => l.slice(2).trim())
+        .filter(Boolean);
+    }
+
+    const SNRY = ["JR", "SSR", "SR", "Lead", "Manager"];
+
+    const RANK_COLORS = [
+      "#ff5e00",
+      "rgba(196,75,187,.9)",
+      "rgba(255,255,255,.25)",
+      "rgba(255,255,255,.1)",
+    ];
+
+    const RANK_BAR = [
+      "linear-gradient(90deg,#ff5e00,#7321a6)",
+      "linear-gradient(90deg,#7321a6,#4a1a80)",
+      "rgba(115,33,166,.4)",
+      "rgba(115,33,166,.2)",
+    ];
+
+    const PROFILES = {
+      promos: {
+        kwds: ["ml","machine learning","data","recomend","embed","nlp","ia","ai","analytic","mcp","llm","modelo","personaliz","algoritm","estadistic","feature","train","snowflak","aws","lambda","dynamo","fintech","motor","scikit","xgboost","neural","deep","tensor","pytorch"],
+        role: ["data","ml","scientist","analyst","backend","full stack","inteligencia","machine"],
+        rtpls: [
+          { m: ["ml","machine learning","deep","neural","tensor","scikit","embed","algoritm","train"], f: k => "Tu background en " + k + " es central al Two-Tower model que construimos" },
+          { m: ["python","snowflake","aws","dynamo","lambda","data engineer"],                         f: k => "El stack (" + k + ") es exactamente lo que corre el motor en producción" },
+          { m: ["fintech","banco","financ","credito"],                                                f: _ => "Personalización de promos en fintech — caso directo para tu industria" },
+          { m: ["mcp","llm","ia","ai","genai","openai","gpt"],                                        f: k => "MCP + recomendación — combina " + k + " con el enfoque de la charla" },
+          { m: [], f: _ => "Arquitectura ML en producción: Two-Tower model + MCP sobre Khatu" },
+        ],
+      },
+      voice_t: {
+        kwds: ["voice","voz","nlp","product","ux","ui","design","diseño","accesib","audio","speech","user","frontend","mobile","ios","android","figma","conversac"],
+        role: ["product","ux","ui","design","front","mobile","ios","android"],
+        rtpls: [
+          { m: ["ux","ui","design","figma","product","accesib"], f: k => "Tu foco en " + k + " conecta directo con los desafíos de UX de voz" },
+          { m: ["nlp","voice","voz","speech","audio","conversac"], f: k => "Tu experiencia en " + k + " hace esta charla especialmente relevante" },
+          { m: ["mobile","ios","android"], f: k => "Integración de voz en " + k + " — caso práctico que podés aplicar" },
+          { m: [], f: _ => "Voice UX: accesibilidad e integración bancaria con voz" },
+        ],
+      },
+      legal: {
+        kwds: ["legal","compliance","regulat","audit","risk","normat","rpa","automat","proceso","operacion","robot","govern","contrato","policy"],
+        role: ["legal","compliance","operacion","ops","process","negocio","business"],
+        rtpls: [
+          { m: ["legal","compliance","regulat","audit","risk"], f: k => "Tu background en " + k + " hace esta charla muy aplicable a tu rol" },
+          { m: ["rpa","automat","proceso","operacion","robot"], f: k => "Automatización con RA — tu conocimiento de " + k + " aplica directo" },
+          { m: [], f: _ => "Legal as Code: automatización de procesos legales con RA" },
+        ],
+      },
+      mora: {
+        kwds: ["llm","openai","gpt","langchain","prompt","genai","agente","agent","chatbot","conversac","nlu","voice","voz","fintech","credito","cobro","mora","claude","gemini"],
+        role: ["ai","ml","llm","backend","engineer","data","architect","genai"],
+        rtpls: [
+          { m: ["llm","openai","gpt","langchain","prompt","genai","agente","agent","claude"], f: k => "Tu expertise en " + k + " es el core de los agentes de voz que se muestran" },
+          { m: ["chatbot","conversac","nlu","voice","voz"], f: k => "Agentes conversacionales con " + k + " — caso real en producción" },
+          { m: ["fintech","credito","cobro","mora"], f: _ => "Caso fintech directo: recupero de mora con voz + LLMs" },
+          { m: [], f: _ => "LLMs + voice agents en producción — caso real de cobranza" },
+        ],
+      },
+    };
+
+    function getReason(id, text) {
+      const p = PROFILES[id];
+      if (!p) return "Charla relevante para tu perfil";
+      for (const t of p.rtpls) {
+        for (const k of t.m) { if (text.includes(k)) return t.f(k); }
+      }
+      return p.rtpls[p.rtpls.length - 1].f();
+    }
+
+    const FEATURE_ORDER = [
+      "ml", "data", "genai", "voice", "ux", "legal", "automation",
+      "fintech", "backend", "mobile", "cloud", "product",
+    ];
+
+    const FEATURE_RULES = [
+      { dim: "ml", terms: ["ml", "machine learning", "modelo", "algoritm", "deep", "neural", "xgboost", "pytorch", "tensor"] },
+      { dim: "data", terms: ["data", "analytic", "estadistic", "feature", "snowflak", "dynamo"] },
+      { dim: "genai", terms: ["llm", "ia", "ai", "genai", "openai", "gpt", "prompt", "langchain", "agente", "agent"] },
+      { dim: "voice", terms: ["voice", "voz", "speech", "audio", "nlu", "nlp", "chatbot", "conversac"] },
+      { dim: "ux", terms: ["ux", "ui", "design", "diseño", "figma", "accesib", "frontend"] },
+      { dim: "legal", terms: ["legal", "compliance", "regulat", "audit", "risk", "normat", "policy", "contrato"] },
+      { dim: "automation", terms: ["rpa", "automat", "proceso", "robot", "ops", "operacion"] },
+      { dim: "fintech", terms: ["fintech", "banco", "financ", "credito", "cobro", "mora"] },
+      { dim: "backend", terms: ["backend", "api", "microserv", "engineer", "arquitectura", "architecture"] },
+      { dim: "mobile", terms: ["mobile", "ios", "android"] },
+      { dim: "cloud", terms: ["aws", "lambda", "cloud", "devops", "mcp"] },
+      { dim: "product", terms: ["product", "pm", "management", "negocio", "business"] },
+    ];
+
+    const TALK_TOWER = {
+      promos: {
+        ml: 1.0, data: 1.0, genai: 0.8, voice: 0.1, ux: 0.2, legal: 0.0,
+        automation: 0.2, fintech: 0.9, backend: 0.8, mobile: 0.2, cloud: 0.9, product: 0.4,
+      },
+      voice_t: {
+        ml: 0.3, data: 0.2, genai: 0.4, voice: 1.0, ux: 1.0, legal: 0.0,
+        automation: 0.2, fintech: 0.7, backend: 0.3, mobile: 0.9, cloud: 0.2, product: 0.8,
+      },
+      legal: {
+        ml: 0.1, data: 0.3, genai: 0.2, voice: 0.0, ux: 0.2, legal: 1.0,
+        automation: 1.0, fintech: 0.4, backend: 0.2, mobile: 0.0, cloud: 0.2, product: 0.7,
+      },
+      mora: {
+        ml: 0.6, data: 0.5, genai: 1.0, voice: 0.9, ux: 0.3, legal: 0.1,
+        automation: 0.3, fintech: 1.0, backend: 0.7, mobile: 0.3, cloud: 0.5, product: 0.5,
+      },
+    };
+
+    const DEMO_PROFILES = [
+      {
+        id: "tonga",
+        label: "Tonga",
+        name: "Tonga",
+        role: "IT Manager",
+        snry: "Manager",
+        skills: ["DevOps / Cloud", "APIs / Microservicios", "Arquitectura de Software", "Product Management"],
+      },
+      {
+        id: "dany",
+        label: "Dany",
+        name: "Dany",
+        role: "Data Scientist",
+        snry: "SR",
+        skills: ["Machine Learning", "Data Engineering", "Snowflake / Data Warehouse", "MLOps", "Fintech"],
+      },
+      {
+        id: "gise",
+        label: "Gise",
+        name: "Gise",
+        role: "Data & AI Lead",
+        snry: "Lead",
+        skills: ["Agentes de IA", "LLMs / IA Generativa", "Data Engineering", "Arquitectura de Software", "Product Management"],
+      },
+    ];
+
+    function toVector(features) {
+      return FEATURE_ORDER.map(d => Number(features[d] || 0));
+    }
+
+    function normalize(vec) {
+      const norm = Math.sqrt(vec.reduce((acc, v) => acc + v * v, 0));
+      if (!norm) return vec;
+      return vec.map(v => v / norm);
+    }
+
+    function dot(a, b) {
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+      return sum;
+    }
+
+    function baselineScores(role, skills) {
+      const text = (role + " " + skills).toLowerCase();
+      const raw = {};
+      for (const [id, p] of Object.entries(PROFILES)) {
+        let s = 18;
+        for (const k of p.kwds) { if (text.includes(k)) s += 9; }
+        for (const r of p.role) { if (text.includes(r)) s += 14; }
+        raw[id] = s;
+      }
+      const max = Math.max(...Object.values(raw));
+      const f = max < 75 ? 75 / max : max > 100 ? 100 / max : 1;
+      const out = {};
+      for (const [id, v] of Object.entries(raw)) out[id] = Math.min(Math.round(v * f), 100);
+      return out;
+    }
+
+    function buildUserTower(role, skills) {
+      const text = (role + " " + skills).toLowerCase();
+      const feats = {};
+      FEATURE_ORDER.forEach(d => { feats[d] = 0; });
+
+      for (const rule of FEATURE_RULES) {
+        for (const term of rule.terms) {
+          if (text.includes(term)) feats[rule.dim] += 1;
+        }
+      }
+
+      // Fallback suave para evitar vector nulo cuando hay muy poca señal.
+      const hasSignal = FEATURE_ORDER.some(d => feats[d] > 0);
+      if (!hasSignal) {
+        feats.product = 1;
+        feats.backend = 1;
+      }
+
+      return normalize(toVector(feats));
+    }
+
+    function userFeatureMap(role, skills) {
+      const text = (role + " " + skills).toLowerCase();
+      const feats = {};
+      FEATURE_ORDER.forEach(d => { feats[d] = 0; });
+      for (const rule of FEATURE_RULES) {
+        for (const term of rule.terms) {
+          if (text.includes(term)) feats[rule.dim] += 1;
+        }
+      }
+      return feats;
+    }
+
+    function buildTalkTower(id) {
+      if (TALK_TOWER[id]) return normalize(toVector(TALK_TOWER[id]));
+
+      // Fallback para charlas nuevas: inferimos embedding usando keywords del perfil.
+      const feats = {};
+      FEATURE_ORDER.forEach(d => { feats[d] = 0; });
+      const p = PROFILES[id];
+      if (!p) return normalize(toVector(feats));
+
+      for (const kw of [...p.kwds, ...p.role]) {
+        for (const rule of FEATURE_RULES) {
+          for (const term of rule.terms) {
+            if (kw.includes(term) || term.includes(kw)) feats[rule.dim] += 0.3;
+          }
+        }
+      }
+
+      return normalize(toVector(feats));
+    }
+
+    function computeScores(role, skills) {
+      const userVec = buildUserTower(role, skills);
+      const out = {};
+      for (const id of Object.keys(PROFILES)) {
+        const talkVec = buildTalkTower(id);
+        const sim = Math.max(0, dot(userVec, talkVec));
+        out[id] = Math.min(100, Math.round(40 + sim * 60));
+      }
+      return out;
+    }
+
+    function rankMap(scores) {
+      const ids = Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+      const m = {};
+      ids.forEach((id, i) => { m[id] = i + 1; });
+      return m;
+    }
+
+    function topSignals(role, skills, maxItems) {
+      const feats = userFeatureMap(role, skills);
+      const arr = Object.entries(feats)
+        .filter(([, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, maxItems || 4);
+      const max = arr.length ? arr[0][1] : 1;
+      return arr.map(([k, v]) => ({ name: k.toUpperCase(), value: v, pct: Math.round((v / max) * 100) }));
+    }
+
+    function recommend(role, skills, name, snry, talks) {
+      const scores = computeScores(role, skills);
+      const baseline = baselineScores(role, skills);
+      const twoTowerRank = rankMap(scores);
+      const baseRank = rankMap(baseline);
+      const text = (role + " " + skills).toLowerCase();
+      const ranked = Object.entries(scores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([id, score], i) => ({
+          id, score, rank: i + 1,
+          talk: (talks || TALKS_FALLBACK).find(t => t.id === id),
+          razon: getReason(id, text),
+          baselineScore: baseline[id] || 0,
+          baselineRank: baseRank[id] || null,
+          deltaRank: (baseRank[id] || 0) - (twoTowerRank[id] || 0),
+        }));
+      return {
+        nombre_display: name || role || "Anónimo",
+        resumen_perfil: (role + " · " + snry).slice(0, 52),
+        recomendaciones: ranked,
+        signals: topSignals(role, skills, 5),
+      };
+    }
+
+    function Bar({ score, color, delay }) {
+      const [w, setW] = useState(0);
+      useEffect(() => {
+        const t = setTimeout(() => setW(score), delay || 100);
+        return () => clearTimeout(t);
+      }, [score]);
+      return E("div", { className: "bar-track" },
+        E("div", { className: "bar-fill", style: { width: w + "%", background: color } })
+      );
+    }
+
+    const ini = n => (n || "?").trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
+    const Topbar = () => E("div", { className: "topbar" },
+      E("span", { className: "nx-wordmark" }, "NaranjaX"),
+      E("span", { className: "powered" }, "27 mayo · 4° edición")
+    );
+
+    const Hero = ({ sub }) => E("div", { className: "hero" },
+      E("img", { className: "hero-deco left", src: DECO_RAYO, alt: "decoración" }),
+      E("img", { className: "hero-deco right", src: DECO_ANILLO, alt: "decoración" }),
+      E("img", {
+        src: T4I_LOGO,
+        className: "t4i-logo",
+        alt: "Tech4Impact",
+        onError: e => { e.target.style.display = "none"; },
+      }),
+      E("p", { className: "sub" }, sub),
+      E("div", { className: "event-stats" },
+        E("div", { className: "stat-chip" },
+          E("span", { className: "stat-num" }, "+50"),
+          E("span", { className: "stat-lbl" }, "Speakers")
+        ),
+        E("div", { className: "stat-chip" },
+          E("span", { className: "stat-num" }, "7"),
+          E("span", { className: "stat-lbl" }, "Tracks")
+        ),
+        E("div", { className: "stat-chip" },
+          E("span", { className: "stat-num" }, "100%"),
+          E("span", { className: "stat-lbl" }, "Gratuito")
+        )
+      )
+    );
+
+    function RadarFeatures({ labels, userVec, talkVec }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+
+      useEffect(() => {
+        if (!canvasRef.current || !window.Chart) return;
+
+        if (chartRef.current) {
+          chartRef.current.destroy();
+          chartRef.current = null;
+        }
+
+        const ctx = canvasRef.current.getContext("2d");
+        chartRef.current = new window.Chart(ctx, {
+          type: "radar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "User Tower",
+                data: userVec.map(v => Number((v || 0).toFixed(3))),
+                borderColor: "rgba(24,195,255,1)",
+                backgroundColor: "rgba(24,195,255,.18)",
+                pointBackgroundColor: "rgba(24,195,255,1)",
+                pointRadius: 2,
+                borderWidth: 2,
+              },
+              {
+                label: "Talk Tower",
+                data: talkVec.map(v => Number((v || 0).toFixed(3))),
+                borderColor: "rgba(255,94,0,1)",
+                backgroundColor: "rgba(255,94,0,.18)",
+                pointBackgroundColor: "rgba(255,94,0,1)",
+                pointRadius: 2,
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 450 },
+            plugins: {
+              legend: {
+                labels: {
+                  color: "rgba(255,255,255,.9)",
+                  boxWidth: 14,
+                  boxHeight: 8,
+                  font: { size: 10 },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(12,9,29,.95)",
+                borderColor: "rgba(255,255,255,.25)",
+                borderWidth: 1,
+                titleColor: "#fff",
+                bodyColor: "#fff",
+              },
+            },
+            scales: {
+              r: {
+                min: 0,
+                max: 0.7,
+                ticks: {
+                  stepSize: 0.1,
+                  color: "rgba(255,255,255,.45)",
+                  backdropColor: "transparent",
+                  showLabelBackdrop: false,
+                  font: { size: 9 },
+                },
+                grid: { color: "rgba(255,255,255,.14)" },
+                angleLines: { color: "rgba(255,255,255,.16)" },
+                pointLabels: {
+                  color: "rgba(255,255,255,.86)",
+                  font: { size: 9, family: "Gibson-Semibold, sans-serif" },
+                },
+              },
+            },
+          },
+        });
+
+        return () => {
+          if (chartRef.current) {
+            chartRef.current.destroy();
+            chartRef.current = null;
+          }
+        };
+      }, [labels, userVec, talkVec]);
+
+      return E("div", {
+        style: {
+          height: 270,
+          border: "1px solid rgba(255,255,255,.15)",
+          borderRadius: 10,
+          background: "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01))",
+          padding: 10,
+        },
+      }, E("canvas", { ref: canvasRef }));
+    }
+
+
+    // --- Estado principal ---
+    function App() {
+      const [mode,  setMode]  = useState("linkedin");
+      const [url,   setUrl]   = useState("");
+      const [name,  setName]  = useState("");
+      const [role,  setRole]  = useState("");
+      const [selectedSkills, setSelectedSkills] = useState([]);
+      const [customSkills,   setCustomSkills]   = useState("");
+      const [snry,  setSnry]  = useState("SSR");
+      const [phase, setPhase] = useState("input");
+      const [res,   setRes]   = useState(null);
+      const [talks,     setTalks]     = useState(TALKS_FALLBACK);
+      const [skillsList, setSkillsList] = useState(SKILLS_FALLBACK);
+      const [showComparator, setShowComparator] = useState(false);
+      const [cmpTalk, setCmpTalk] = useState("promos");
+      const [shareBusy, setShareBusy] = useState(false);
+      const [shareHint, setShareHint] = useState("");
+
+      const shellSt = { width: "100%", maxWidth: "var(--app-max-width)", display: "flex", flexDirection: "column", alignItems: "center" };
+
+      useEffect(() => {
+        fetch('talks.md').then(r => r.text()).then(md => {
+          const parsed = parseTalks(md);
+          if (parsed.length) setTalks(parsed);
+        }).catch(() => {});
+        fetch('skills.md').then(r => r.text()).then(md => {
+          const parsed = parseSkills(md);
+          if (parsed.length) setSkillsList(parsed);
+        }).catch(() => {});
+      }, []);
+
+      const toggleSkill = s => setSelectedSkills(prev =>
+        prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+      );
+
+      const applyDemoProfile = profile => {
+        setMode("manual");
+        setUrl("");
+        setName(profile.name);
+        setRole(profile.role);
+        setSnry(profile.snry);
+        setSelectedSkills(profile.skills.filter(s => skillsList.includes(s)));
+        setCustomSkills(profile.skills.filter(s => !skillsList.includes(s)).join(", "));
+      };
+
+      const exName = v => {
+        const m = v.match(/linkedin\.com\/in\/([^/?&#\s]+)/);
+        return m ? m[1].split(/[-_]/).filter(Boolean).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ") : "";
+      };
+
+      const onUrl = v => { setUrl(v); const n = exName(v); if (n && !name) setName(n); };
+      const skillsText = selectedSkills.join(" ") + " " + customSkills;
+      const canGo = name.trim().length > 1 && role.trim().length > 1 && (selectedSkills.length > 0 || customSkills.trim().length > 3);
+
+      const go = () => {
+        setPhase("loading");
+        setTimeout(() => { setRes(recommend(role, skillsText, name, snry, talks)); setPhase("results"); }, 1500);
+      };
+
+      const reset = () => {
+        setPhase("input"); setRes(null);
+        setUrl(""); setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("SSR");
+      };
+
+      function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+        const words = String(text || "").split(/\s+/);
+        const lines = [];
+        let line = "";
+        for (let i = 0; i < words.length; i++) {
+          const test = line ? line + " " + words[i] : words[i];
+          if (ctx.measureText(test).width <= maxWidth) {
+            line = test;
+          } else {
+            if (line) lines.push(line);
+            line = words[i];
+          }
+        }
+        if (line) lines.push(line);
+        const clipped = typeof maxLines === "number" ? lines.slice(0, maxLines) : lines;
+        clipped.forEach((ln, idx) => ctx.fillText(ln, x, y + idx * lineHeight));
+      }
+
+      function drawRoundedRect(ctx, x, y, w, h, r) {
+        const rr = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + h, rr);
+        ctx.arcTo(x + w, y + h, x, y + h, rr);
+        ctx.arcTo(x, y + h, x, y, rr);
+        ctx.arcTo(x, y, x + w, y, rr);
+        ctx.closePath();
+      }
+
+      function loadImg(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      async function renderImpactCard(resultData) {
+        const top = resultData?.recomendaciones?.[0];
+        if (!top) return null;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = 1080;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return null;
+
+        const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+        grad.addColorStop(0, "#2a0640");
+        grad.addColorStop(0.58, "#1a0c57");
+        grad.addColorStop(1, "#0f3b63");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        ctx.fillStyle = "rgba(255,255,255,.16)";
+        for (let i = 0; i < 120; i++) {
+          const x = Math.random() * 1080;
+          const y = Math.random() * 1080;
+          const r = Math.random() * 1.8 + 0.4;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const g1 = ctx.createRadialGradient(120, 970, 40, 120, 970, 340);
+        g1.addColorStop(0, "rgba(255,94,0,.36)");
+        g1.addColorStop(1, "rgba(255,94,0,0)");
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        const g2 = ctx.createRadialGradient(930, 120, 40, 930, 120, 260);
+        g2.addColorStop(0, "rgba(24,195,255,.16)");
+        g2.addColorStop(1, "rgba(24,195,255,0)");
+        ctx.fillStyle = g2;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        let logoPainted = false;
+        try {
+          const logo = await loadImg(T4I_LOGO);
+          const w = 320;
+          const h = (logo.height / logo.width) * w;
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(logo, 760, 82, w, h);
+          ctx.globalAlpha = 1;
+          logoPainted = true;
+        } catch (_) {}
+
+        drawRoundedRect(ctx, 64, 272, 952, 550, 36);
+        ctx.fillStyle = "rgba(19,8,40,.58)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.12)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(213,196,255,.7)";
+        ctx.font = "600 34px Gibson-Semibold, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("CHARLA RECOMENDADA", 110, 358);
+
+        ctx.fillStyle = "rgba(255,255,255,.98)";
+        ctx.font = "700 94px Gibson-Semibold, sans-serif";
+        ctx.textAlign = "center";
+        wrapCanvasText(ctx, String(top.talk?.title || top.id), 118, 470, 844, 102, 4);
+
+        if (!logoPainted) {
+          ctx.fillStyle = "rgba(255,255,255,.74)";
+          ctx.font = "700 60px Gibson-Semibold, sans-serif";
+          ctx.textAlign = "right";
+          ctx.fillText("Tech4Impact", 1006, 156);
+        }
+
+        return canvas;
+      }
+
+      function getShareText(resultData) {
+        const top = resultData?.recomendaciones?.[0];
+        if (!top) return "";
+        const talkTitle = String(top.talk?.title || top.id);
+        return `En mi lightning talk "${talkTitle}" aprendi sobre modelos de recomendacion aplicados a Promociones en Tech4Impact. #Tech4Impact #T4I #NaranjaX #ModelosDeRecomendacion #Promociones`;
+      }
+
+      async function tryNativeShare(file, shareText) {
+        if (!file || !navigator.share || !navigator.canShare || !navigator.canShare({ files: [file] })) return false;
+        await navigator.share({
+          files: [file],
+          title: "Mi lightning talk en Tech4Impact",
+          text: shareText,
+        });
+        return true;
+      }
+
+      function downloadBlob(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
+
+      async function copyToClipboard(text) {
+        if (!text || !navigator.clipboard || !navigator.clipboard.writeText) return false;
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function onShareImpactCard(network) {
+        if (!res || shareBusy || !network) return;
+        setShareBusy(true);
+        setShareHint("");
+        try {
+          const canvas = await renderImpactCard(res);
+          if (!canvas) return;
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
+          if (!blob) return;
+
+          const shareText = getShareText(res);
+          const copied = await copyToClipboard(shareText);
+
+          const hasFileCtor = typeof File !== "undefined";
+          const file = hasFileCtor ? new File([blob], "t4i-impact-card.png", { type: "image/png" }) : null;
+
+          if (network === "instagram") {
+            if (await tryNativeShare(file, shareText)) {
+              setShareHint("Listo: se abrio el share nativo con imagen y texto.");
+            } else {
+              downloadBlob(blob, "t4i-impact-card.png");
+              window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+              setShareHint(copied ? "Imagen descargada y texto copiado para Instagram." : "Imagen descargada. Copia el texto sugerido para Instagram.");
+            }
+            return;
+          }
+
+          if (network === "twitter") {
+            if (await tryNativeShare(file, shareText)) {
+              setShareHint("Listo: se abrio el share nativo con imagen y texto.");
+              return;
+            }
+            window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(shareText), "_blank", "noopener,noreferrer");
+            downloadBlob(blob, "t4i-impact-card.png");
+            setShareHint(copied ? "Texto copiado y Twitter abierto. Adjunta la imagen si lo deseas." : "Twitter abierto. Adjunta la imagen descargada.");
+            return;
+          }
+
+          if (network === "linkedin") {
+            if (await tryNativeShare(file, shareText)) {
+              setShareHint("Listo: se abrio el share nativo con imagen y texto.");
+              return;
+            }
+            window.open("https://www.linkedin.com/feed/?shareActive=true&text=" + encodeURIComponent(shareText), "_blank", "noopener,noreferrer");
+            downloadBlob(blob, "t4i-impact-card.png");
+            setShareHint(copied ? "Texto copiado y LinkedIn abierto. Adjunta la imagen si lo deseas." : "LinkedIn abierto. Adjunta la imagen descargada.");
+            return;
+          }
+
+          if (await tryNativeShare(file, shareText)) {
+            setShareHint("Listo: se abrio el share nativo.");
+          } else {
+            downloadBlob(blob, "t4i-impact-card.png");
+            setShareHint(copied ? "Imagen descargada y texto copiado." : "Imagen descargada.");
+          }
+        } catch (_) {
+          setShareHint("No se pudo completar el share en este dispositivo.");
+        } finally {
+          setShareBusy(false);
+        }
+      }
+
+      const tabSt = t => ({
+        flex: 1, padding: "13px 8px", fontSize: "13px", fontWeight: "600",
+        fontFamily: "'Gibson-Semibold',sans-serif", letterSpacing: ".06em",
+        textTransform: "uppercase", textAlign: "center", cursor: "pointer",
+        border: "none", transition: "all .2s",
+        background: mode === t ? "rgba(255,94,0,.08)" : "transparent",
+        color: mode === t ? "#ff5e00" : "rgba(180,150,255,.4)",
+        borderBottom: mode === t ? "2px solid #ff5e00" : "2px solid transparent",
+      });
+
+      const snrySt = s => ({
+        padding: "7px 14px", borderRadius: "50px", fontSize: "12px", cursor: "pointer",
+        fontFamily: "'Gibson-Semibold',sans-serif", fontWeight: "600",
+        letterSpacing: ".04em", transition: "all .2s",
+        border:      snry === s ? "1px solid #ff5e00"           : "1px solid rgba(115,33,166,.4)",
+        background:  snry === s ? "linear-gradient(90deg,#ff5e00,#7321a6)" : "rgba(115,33,166,.12)",
+        color:       snry === s ? "#fff"                         : "rgba(180,150,255,.55)",
+        boxShadow:   snry === s ? "0 0 12px #ff5e0066"           : "none",
+      });
+
+      /* ── LOADING ── */
+      if (phase === "loading") return E("div", { style: shellSt },
+        E(Topbar),
+        E(Hero, { sub: "Analizando tu perfil con el motor de recomendación..." }),
+        E("div", { className: "card", style: { width: "100%" } },
+          E("div", { className: "loading-wrap" },
+            E("div", { className: "dots" }, [0,1,2].map(i => E("div", { key: i, className: "dot" }))),
+            E("p", { className: "ld-txt" }, "Proyectando embedding de usuario..."),
+            E("p", { className: "ld-txt", style: { color: "rgba(180,150,255,.2)" } }, "Calculando dot product con el catálogo...")
+          )
+        )
+      );
+
+      /* ── RESULTS O COMPARATOR ── */
+      if (phase === "results" && res) return E("div", { style: shellSt },
+        E(Topbar),
+        E(Hero, { sub: E("span", null, showComparator ? "¿Cómo decide el modelo?" : "Tu agenda ", E("em", null, "personalizada"), showComparator ? " paso a paso" : " para hoy") }),
+        E("div", { className: "card", style: { width: "100%" } },
+          showComparator
+            ? E(ModelComparator, {
+                res, cmpTalk, setCmpTalk,
+                onBack: () => setShowComparator(false),
+                recomendaciones: res.recomendaciones,
+                nombre_display: res.nombre_display,
+                userRole: role,
+                userSkills: selectedSkills.join(" ") + " " + customSkills,
+                snry,
+              })
+            : E("div", { className: "res-wrap" },
+                E("div", { className: "chip" },
+                  E("div", { className: "av" }, ini(res.nombre_display)),
+                  E("div", { style: { flex: 1, minWidth: 0 } },
+                    E("div", { className: "pname" }, res.nombre_display),
+                    E("div", { className: "prole" }, res.resumen_perfil)
+                  )
+                ),
+                E("p", { className: "sec-lbl" }, "Charlas rankeadas para vos"),
+                res.recomendaciones.map((r, i) =>
+                  E("div", { key: r.id, className: "tk" + (r.rank === 1 ? " r1" : "") },
+                    E("div", { className: "tk-top" },
+                      E("span", { className: "rk", style: { color: RANK_COLORS[i] } }, "#" + r.rank),
+                      E("span", { className: "tk-title" }, r.talk?.title || r.id),
+                      E("span", { className: "sc", style: { color: RANK_COLORS[i] } }, r.score)
+                    ),
+                    E(Bar, { score: r.score, color: RANK_BAR[i], delay: i * 180 + 80 }),
+                    E("p", { className: "reason" }, r.razon)
+                  )
+                ),
+                E("div", { className: "share-row" },
+                  E("button", {
+                    className: "impact-share tw",
+                    disabled: shareBusy,
+                    onClick: () => onShareImpactCard("twitter"),
+                  }, shareBusy ? "Generando..." : "Twitter"),
+                  E("button", {
+                    className: "impact-share ig",
+                    disabled: shareBusy,
+                    onClick: () => onShareImpactCard("instagram"),
+                  }, shareBusy ? "Generando..." : "Instagram"),
+                  E("button", {
+                    className: "impact-share li",
+                    disabled: shareBusy,
+                    onClick: () => onShareImpactCard("linkedin"),
+                  }, shareBusy ? "Generando..." : "LinkedIn"),
+                  E("button", {
+                    className: "share",
+                    onClick: () => setShowComparator(true)
+                  }, "¿Cómo decide el modelo?")
+                ),
+                shareHint ? E("p", { className: "share-hint" }, shareHint) : null,
+                E("button", { className: "again", onClick: reset }, "← Probar con otro perfil")
+              )
+        ),
+        E("p", { className: "ev-tag" }, "Tech4Impact by NaranjaX")
+      );
+    // --- Componente visual de comparativa avanzada ---
+    function ModelComparator({ res, cmpTalk, setCmpTalk, onBack, recomendaciones, nombre_display, userRole, userSkills, snry }) {
+      // Obtener embedding usuario y charla seleccionada
+      const userVec = buildUserTower(userRole, userSkills);
+      const talkVec = buildTalkTower(cmpTalk);
+      const baseline = baselineScores(userRole, userSkills);
+      const scores = computeScores(userRole, userSkills);
+      const talk = (recomendaciones || []).find(r => r.id === cmpTalk);
+      const talkTitle = talk?.talk?.title || cmpTalk;
+      // Features activadas
+      const userFeats = userFeatureMap(userRole, userSkills);
+      // Dot product paso a paso
+      const dotSteps = FEATURE_ORDER.map((f, i) => ({
+        name: f.toUpperCase(),
+        user: userVec[i],
+        talk: talkVec[i],
+        prod: userVec[i] * talkVec[i],
+        rawUser: userFeats[f],
+      }));
+      const dotSum = dot(userVec, talkVec);
+      // Explicación textual
+      const mainFeat = dotSteps.reduce((a, b) => (b.prod > a.prod ? b : a), dotSteps[0]);
+      const explain =
+        mainFeat.prod > 0.12
+          ? `La feature más determinante fue "${mainFeat.name}" (user: ${mainFeat.user.toFixed(2)}, charla: ${mainFeat.talk.toFixed(2)}).`
+          : "No hubo una feature dominante, el score es más balanceado.";
+
+      return E("div", { className: "res-wrap" },
+        E("div", { className: "chip" },
+          E("div", { className: "av" }, ini(nombre_display)),
+          E("div", { style: { flex: 1, minWidth: 0 } },
+            E("div", { className: "pname" }, nombre_display),
+            E("div", { className: "prole" }, userRole + " · " + snry)
+          )
+        ),
+        E("p", { className: "sec-lbl" }, "Comparativa visual de modelo"),
+        E("div", { style: { margin: "10px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Charla a comparar"),
+          E("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+            recomendaciones.map(r =>
+              E("button", {
+                key: r.id,
+                className: "skill-btn" + (cmpTalk === r.id ? " active" : ""),
+                style: { fontSize: 12, padding: "7px 14px" },
+                onClick: () => setCmpTalk(r.id)
+              }, r.talk?.title || r.id)
+            )
+          )
+        ),
+        E("div", { style: { margin: "10px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Embeddings (User vs Charla)"),
+          E("div", { style: { display: "flex", gap: 18, flexWrap: "wrap" } },
+            E("div", { style: { flex: 1 } },
+              E("div", { style: { fontSize: 11, color: "#18c3ff", marginBottom: 4 } }, "User Tower"),
+              FEATURE_ORDER.map((f, i) =>
+                E("div", { key: f, style: { display: "flex", alignItems: "center", marginBottom: 2 } },
+                  E("span", { style: { width: 78, minWidth: 0, fontSize: 10, color: "#fff8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, f.toUpperCase()),
+                  E("div", { style: { background: "#18c3ff33", borderRadius: 6, height: 8, width: 80, margin: "0 6px" } },
+                    E("div", { style: { background: "#18c3ff", height: 8, borderRadius: 6, width: (userVec[i] * 80).toFixed(1) + "px", transition: "width .7s" } })
+                  ),
+                  E("span", { style: { fontSize: 10, color: "#18c3ff" } }, userVec[i].toFixed(2))
+                )
+              )
+            ),
+            E("div", { style: { flex: 1 } },
+              E("div", { style: { fontSize: 11, color: "#ff5e00", marginBottom: 4 } }, "Talk Tower"),
+              FEATURE_ORDER.map((f, i) =>
+                E("div", { key: f, style: { display: "flex", alignItems: "center", marginBottom: 2 } },
+                  E("span", { style: { width: 78, minWidth: 0, fontSize: 10, color: "#fff8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, f.toUpperCase()),
+                  E("div", { style: { background: "#ff5e0033", borderRadius: 6, height: 8, width: 80, margin: "0 6px" } },
+                    E("div", { style: { background: "#ff5e00", height: 8, borderRadius: 6, width: (talkVec[i] * 80).toFixed(1) + "px", transition: "width .7s" } })
+                  ),
+                  E("span", { style: { fontSize: 10, color: "#ff5e00" } }, talkVec[i].toFixed(2))
+                )
+              )
+            )
+          )
+        ),
+        E("div", { style: { margin: "4px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Radar de features (User Tower vs Talk Tower)"),
+          E(RadarFeatures, {
+            labels: FEATURE_ORDER.map(f => f.toUpperCase()),
+            userVec,
+            talkVec,
+          })
+        ),
+        E("div", { style: { margin: "10px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Dot product paso a paso"),
+          E("div", { style: { border: "1px solid #fff2", borderRadius: 8, padding: 10, background: "rgba(255,255,255,.03)" } },
+            // Encabezado de columnas
+            E("div", { style: { display: "flex", alignItems: "center", fontSize: 11, fontWeight: 600, marginBottom: 4, color: "#fff9" } },
+              E("span", { style: { width: 78 } }, "Feature"),
+              E("span", { style: { width: 38, textAlign: "center" } }, "User"),
+              E("span", { style: { width: 38, textAlign: "center" } }, "Charla"),
+              E("span", { style: { width: 38, textAlign: "center" } }, "Producto"),
+              E("span", { style: { width: 18 } }, "")
+            ),
+            dotSteps.map((step, i) =>
+              E("div", { key: step.name, style: {
+                display: "flex", alignItems: "center", fontSize: 11, marginBottom: 2,
+                background: i % 2 === 0 ? "rgba(255,255,255,.015)" : "rgba(24,195,255,.03)",
+                borderRadius: 4
+              } },
+                E("span", { style: { width: 78, minWidth: 0, color: "#fff8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, step.name),
+                E("span", { style: { width: 38, color: "#18c3ff", textAlign: "center", borderLeft: "1px solid #2222", borderRight: "1px solid #2222" } }, step.user.toFixed(2)),
+                E("span", { style: { width: 38, color: "#ff5e00", textAlign: "center", borderRight: "1px solid #2222" } }, step.talk.toFixed(2)),
+                E("span", { style: { width: 38, color: step.prod > 0.12 ? "#4de3a3" : "#fff7", textAlign: "center" } }, (step.prod).toFixed(2)),
+                step.prod > 0.12 && E("span", { style: { color: "#4de3a3", fontSize: 10, marginLeft: 4 } }, "★")
+              )
+            ),
+            E("div", { style: { marginTop: 6, fontSize: 12, color: "#4de3a3" } }, "Total: ", dotSum.toFixed(2), " (coseno)")
+          )
+        ),
+        E("div", { style: { margin: "10px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Puntuacion comparada (Baseline vs Two-Tower)"),
+          E("div", { style: { display: "flex", gap: 10, marginBottom: 8, fontSize: 10, color: "#fff9" } },
+            E("div", { style: { display: "flex", alignItems: "center", gap: 5 } },
+              E("span", { style: { width: 10, height: 10, borderRadius: 2, background: "#7a1ec7", display: "inline-block" } }),
+              E("span", null, "Baseline")
+            ),
+            E("div", { style: { display: "flex", alignItems: "center", gap: 5 } },
+              E("span", { style: { width: 10, height: 10, borderRadius: 2, background: "#ff5e00", display: "inline-block" } }),
+              E("span", null, "Two-Tower")
+            )
+          ),
+          E("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
+            recomendaciones.map(r =>
+              E("div", {
+                key: r.id,
+                style: {
+                  border: "1px solid " + (cmpTalk === r.id ? "rgba(24,195,255,.45)" : "#fff2"),
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  background: cmpTalk === r.id ? "#18c3ff14" : "rgba(255,255,255,.02)",
+                }
+              },
+                E("div", { style: { fontSize: 11, color: "#fff", marginBottom: 6, display: "flex", justifyContent: "space-between", gap: 8 } },
+                  E("span", { style: { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, (r.talk?.title || r.id)),
+                  E("span", { style: { color: "#fff8" } }, "#", r.rank)
+                ),
+                E("div", { style: { marginBottom: 4 } },
+                  E("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 10, color: "#c9a6ff", marginBottom: 2 } },
+                    E("span", null, "Baseline"),
+                    E("span", null, r.baselineScore)
+                  ),
+                  E("div", { style: { height: 8, borderRadius: 99, background: "rgba(122,30,199,.18)", overflow: "hidden" } },
+                    E("div", { style: { width: r.baselineScore + "%", height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#7a1ec7,#a35ed8)", transition: "width .6s ease" } })
+                  )
+                ),
+                E("div", null,
+                  E("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 10, color: "#ffd7bf", marginBottom: 2 } },
+                    E("span", null, "Two-Tower"),
+                    E("span", null, r.score)
+                  ),
+                  E("div", { style: { height: 8, borderRadius: 99, background: "rgba(255,94,0,.16)", overflow: "hidden" } },
+                    E("div", { style: { width: r.score + "%", height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#ff5e00,#ff8d4a)", transition: "width .6s ease" } })
+                  )
+                )
+              )
+            )
+          )
+        ),
+        E("div", { style: { margin: "10px 0 18px 0" } },
+          E("label", { className: "lbl" }, "Explicación"),
+          E("div", { className: "explain-card" },
+            E("div", { className: "explain-badge" },
+              E("span", null, "Model Insight"),
+              E("span", { style: { color: "#ffb387" } }, "•")
+            ),
+            E("div", { className: "explain-text" }, explain)
+          )
+        ),
+        E("button", { className: "again", onClick: onBack }, "← Volver a resultados")
+      );
+    }
+
+      /* ── INPUT ── */
+      return E("div", { style: shellSt },
+        E(Topbar),
+        E(Hero, { sub: E("span", null, "¿Qué charla ", E("em", null, "te recomienda"), " el motor?") }),
+        E("div", { className: "card", style: { width: "100%" } },
+          E("div", { className: "tabs" },
+            E("button", { style: tabSt("linkedin"), onClick: () => setMode("linkedin") }, "LinkedIn"),
+            E("button", { style: tabSt("manual"),   onClick: () => setMode("manual")   }, "Manual")
+          ),
+          E("div", { className: "form-wrap" },
+            E("div", { className: "demo-box" },
+              E("p", { className: "pill" }, "Demo instantánea · story mode"),
+              E("div", { className: "demo-btns" }, DEMO_PROFILES.map(p =>
+                E("button", { key: p.id, className: "demo-btn", onClick: () => applyDemoProfile(p) }, p.label)
+              ))
+            ),
+            mode === "linkedin" && E("div", null,
+              E("label", { className: "lbl" }, "URL de LinkedIn"),
+              E("input", { className: "inp", placeholder: "linkedin.com/in/tu-nombre", value: url, onChange: e => onUrl(e.target.value) }),
+              E("p", { className: "hint" }, "Extraemos tu nombre del URL automáticamente.")
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Nombre *"),
+              E("input", { className: "inp", placeholder: "Tu nombre", value: name, onChange: e => setName(e.target.value) })
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Rol actual *"),
+              E("input", { className: "inp", placeholder: "ej: ML Engineer, Backend Dev, PM", value: role, onChange: e => setRole(e.target.value) })
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Skills e intereses *"),
+              E("div", { className: "skills-grid" },
+                skillsList.map(s =>
+                  E("button", {
+                    key: s,
+                    className: "skill-btn" + (selectedSkills.includes(s) ? " active" : ""),
+                    onClick: () => toggleSkill(s),
+                  }, s)
+                )
+              ),
+              E("input", {
+                className: "inp",
+                placeholder: "Otras skills (opcional)...",
+                value: customSkills,
+                onChange: e => setCustomSkills(e.target.value),
+                style: { marginTop: "8px", fontSize: "12px" },
+              }),
+              selectedSkills.length > 0 && E("p", { className: "skills-hint" },
+                selectedSkills.length + " skill" + (selectedSkills.length > 1 ? "s" : "") + " seleccionada" + (selectedSkills.length > 1 ? "s" : "")
+              )
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Seniority"),
+              E("div", { className: "snry-wrap" }, SNRY.map(s =>
+                E("button", { key: s, style: snrySt(s), onClick: () => setSnry(s) }, s)
+              ))
+            ),
+            E("button", { className: "go", disabled: !canGo, onClick: go }, "Ver mi recomendación")
+          )
+        ),
+        E("p", { className: "ev-tag" }, "27 de mayo · NaranjaX")
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(E(App));
+  </script>
+</body>
+</html>

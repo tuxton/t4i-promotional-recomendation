@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech4Impact — Recomendador de Charlas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body, #root {
+      background:
+        radial-gradient(ellipse 75% 65% at 22% 45%, #2d0f6e 0%, transparent 65%),
+        radial-gradient(ellipse 50% 45% at 80% 80%, #1a0540 0%, transparent 55%),
+        #130a2a;
+      min-height: 100vh;
+      font-family: 'Gibson-Semibold', sans-serif;
+      color: #fff;
+    }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 52px;
+    }
+
+    .topbar {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding: 0 4px;
+    }
+
+    .nx-wordmark {
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -.01em;
+    }
+
+    .powered {
+      font-size: 10px;
+      color: rgba(255,255,255,.25);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .t4i-logo {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 16px;
+    }
+
+    .sub {
+      font-size: 13px;
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      line-height: 1.5;
+      padding: 0 8px;
+    }
+
+    .sub em {
+      color: #ff5e00;
+      font-style: normal;
+    }
+
+    .card {
+      background: rgba(28,16,64,.75);
+      border: 1px solid rgba(139,60,210,.25);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 440px;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(139,60,210,.2);
+    }
+
+    .form-wrap {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .lbl {
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: rgba(255,255,255,.35);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .inp {
+      width: 100%;
+      background: rgba(115,33,166,.12);
+      border: 1px solid rgba(115,33,166,.35);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #fff;
+      font-family: 'Gibson-Semibold', sans-serif;
+      outline: none;
+      transition: border-color .2s, background .2s;
+      display: block;
+    }
+
+    .inp:focus {
+      border-color: rgba(255,94,0,.7);
+      background: rgba(115,33,166,.2);
+    }
+
+    .inp::-webkit-input-placeholder { color: rgba(180,150,255,.65); }
+    .inp::-moz-placeholder           { color: rgba(180,150,255,.65); opacity: 1; }
+    .inp:-ms-input-placeholder       { color: rgba(180,150,255,.65); }
+    .inp::placeholder                { color: rgba(180,150,255,.65); }
+
+    .hint {
+      font-size: 10px;
+      color: rgba(180,150,255,.4);
+      margin-top: 4px;
+    }
+
+    .snry-wrap {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .go {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      position: relative;
+      background: linear-gradient(90deg, #ff5e00, #7321a6);
+      color: #fff;
+      box-shadow: 0 0 25px #ff5e0080, 0 0 50px #ff5e0059, 0 0 75px #ff5e0033;
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      cursor: pointer;
+      transition: box-shadow .3s, opacity .2s;
+    }
+
+    .go:hover {
+      box-shadow: 0 0 35px #ff5e00aa, 0 0 70px #ff5e0080, 0 0 100px #ff5e0055;
+    }
+
+    .go:disabled {
+      opacity: .2;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .loading-wrap {
+      padding: 48px 20px;
+      text-align: center;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5e00;
+      animation: bop 1.2s ease-in-out infinite;
+    }
+
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes bop {
+      0%, 80%, 100% { transform: scale(.8); opacity: .3; }
+      40%            { transform: scale(1.2); opacity: 1; }
+    }
+
+    .ld-txt {
+      font-size: 12px;
+      color: rgba(255,255,255,.3);
+      margin-bottom: 3px;
+      letter-spacing: .04em;
+    }
+
+    .res-wrap { padding: 22px; }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(115,33,166,.15);
+      border: 1px solid rgba(115,33,166,.3);
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+
+    .av {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #ff5e00, #7321a6);
+      box-shadow: 0 0 16px #ff5e0066;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .pname {
+      font-size: 15px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .prole {
+      font-size: 11px;
+      color: rgba(180,150,255,.55);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .sec-lbl {
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: rgba(180,150,255,.4);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tk {
+      border: 1px solid rgba(115,33,166,.25);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 9px;
+      background: rgba(115,33,166,.07);
+    }
+
+    .tk.r1 {
+      border-color: rgba(255,94,0,.5);
+      background: rgba(255,94,0,.05);
+    }
+
+    .tk-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .rk {
+      font-size: 11px;
+      font-weight: 600;
+      padding-top: 2px;
+      min-width: 22px;
+      letter-spacing: .04em;
+    }
+
+    .tk-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      flex: 1;
+    }
+
+    .sc {
+      font-size: 22px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+      line-height: 1;
+    }
+
+    .bar-track {
+      height: 2px;
+      background: rgba(115,33,166,.2);
+      border-radius: 1px;
+      margin-bottom: 8px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 1px;
+      transition: width .9s ease;
+      width: 0;
+    }
+
+    .reason {
+      font-size: 11px;
+      color: rgba(180,150,255,.5);
+      line-height: 1.5;
+    }
+
+    .tk.r1 .reason { color: rgba(255,220,200,.7); }
+
+    .again {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid rgba(115,33,166,.35);
+      border-radius: 50px;
+      color: rgba(180,150,255,.45);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+      font-family: 'Gibson-Semibold', sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: all .2s;
+    }
+
+    .again:hover {
+      border-color: rgba(255,94,0,.5);
+      color: rgba(255,255,255,.6);
+      box-shadow: 0 0 15px #ff5e0033;
+    }
+
+    .ev-tag {
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: rgba(180,150,255,.2);
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .skill-btn {
+      padding: 6px 13px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'Gibson-Semibold', sans-serif;
+      font-weight: 600;
+      letter-spacing: .04em;
+      transition: all .2s;
+      border: 1px solid rgba(115,33,166,.4);
+      background: rgba(115,33,166,.12);
+      color: rgba(180,150,255,.55);
+    }
+
+    .skill-btn:hover {
+      border-color: rgba(255,94,0,.5);
+      color: rgba(255,255,255,.7);
+    }
+
+    .skill-btn.active {
+      border: 1px solid #ff5e00;
+      background: linear-gradient(90deg, #ff5e0099, #7321a6aa);
+      color: #fff;
+      box-shadow: 0 0 10px #ff5e0044;
+    }
+
+    .skills-hint {
+      font-size: 10px;
+      color: rgba(180,150,255,.3);
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    const { useState, useEffect } = React;
+    const E = React.createElement;
+
+    const T4I_LOGO = "https://tech4impact.naranjax.com/assets/tech4impact/logos/t4i_largo.png";
+
+    const TALKS_FALLBACK = [
+      { id: "promos",  title: "Sabemos lo que querés antes de que lo sepas vos" },
+      { id: "voice_t", title: "Transferencias por voz" },
+      { id: "legal",   title: "Legal as Code + RA" },
+      { id: "mora",    title: "Agentes de voz: recupero de mora" },
+    ];
+
+    const SKILLS_FALLBACK = [
+      "Python", "JavaScript / TypeScript", "Machine Learning", "LLMs / IA Generativa",
+      "Data Engineering", "Agentes de IA", "NLP / Voice", "MLOps",
+      "Backend", "Frontend", "Mobile (iOS / Android)", "Product Management",
+      "UX / UI Design", "Fintech", "DevOps / Cloud", "APIs / Microservicios",
+      "RPA / Automatización", "Compliance / Legal Tech", "Arquitectura de Software", "Snowflake / Data Warehouse",
+    ];
+
+    function parseTalks(md) {
+      return md.split('\n')
+        .filter(l => l.startsWith('## '))
+        .map(l => { const [id, ...rest] = l.slice(3).split(' | '); return { id: id.trim(), title: rest.join(' | ').trim() }; })
+        .filter(t => t.id && t.title);
+    }
+
+    function parseSkills(md) {
+      return md.split('\n')
+        .filter(l => l.startsWith('- '))
+        .map(l => l.slice(2).trim())
+        .filter(Boolean);
+    }
+
+    const SNRY = ["JR", "SSR", "SR", "Lead", "Manager"];
+
+    const RANK_COLORS = [
+      "#ff5e00",
+      "rgba(196,75,187,.9)",
+      "rgba(255,255,255,.25)",
+      "rgba(255,255,255,.1)",
+    ];
+
+    const RANK_BAR = [
+      "linear-gradient(90deg,#ff5e00,#7321a6)",
+      "linear-gradient(90deg,#7321a6,#4a1a80)",
+      "rgba(115,33,166,.4)",
+      "rgba(115,33,166,.2)",
+    ];
+
+    const PROFILES = {
+      promos: {
+        kwds: ["ml","machine learning","data","recomend","embed","nlp","ia","ai","analytic","mcp","llm","modelo","personaliz","algoritm","estadistic","feature","train","snowflak","aws","lambda","dynamo","fintech","motor","scikit","xgboost","neural","deep","tensor","pytorch"],
+        role: ["data","ml","scientist","analyst","backend","full stack","inteligencia","machine"],
+        rtpls: [
+          { m: ["ml","machine learning","deep","neural","tensor","scikit","embed","algoritm","train"], f: k => "Tu background en " + k + " es central al Two-Tower model que construimos" },
+          { m: ["python","snowflake","aws","dynamo","lambda","data engineer"],                         f: k => "El stack (" + k + ") es exactamente lo que corre el motor en producción" },
+          { m: ["fintech","banco","financ","credito"],                                                f: _ => "Personalización de promos en fintech — caso directo para tu industria" },
+          { m: ["mcp","llm","ia","ai","genai","openai","gpt"],                                        f: k => "MCP + recomendación — combina " + k + " con el enfoque de la charla" },
+          { m: [], f: _ => "Arquitectura ML en producción: Two-Tower model + MCP sobre Khatu" },
+        ],
+      },
+      voice_t: {
+        kwds: ["voice","voz","nlp","product","ux","ui","design","diseño","accesib","audio","speech","user","frontend","mobile","ios","android","figma","conversac"],
+        role: ["product","ux","ui","design","front","mobile","ios","android"],
+        rtpls: [
+          { m: ["ux","ui","design","figma","product","accesib"], f: k => "Tu foco en " + k + " conecta directo con los desafíos de UX de voz" },
+          { m: ["nlp","voice","voz","speech","audio","conversac"], f: k => "Tu experiencia en " + k + " hace esta charla especialmente relevante" },
+          { m: ["mobile","ios","android"], f: k => "Integración de voz en " + k + " — caso práctico que podés aplicar" },
+          { m: [], f: _ => "Voice UX: accesibilidad e integración bancaria con voz" },
+        ],
+      },
+      legal: {
+        kwds: ["legal","compliance","regulat","audit","risk","normat","rpa","automat","proceso","operacion","robot","govern","contrato","policy"],
+        role: ["legal","compliance","operacion","ops","process","negocio","business"],
+        rtpls: [
+          { m: ["legal","compliance","regulat","audit","risk"], f: k => "Tu background en " + k + " hace esta charla muy aplicable a tu rol" },
+          { m: ["rpa","automat","proceso","operacion","robot"], f: k => "Automatización con RA — tu conocimiento de " + k + " aplica directo" },
+          { m: [], f: _ => "Legal as Code: automatización de procesos legales con RA" },
+        ],
+      },
+      mora: {
+        kwds: ["llm","openai","gpt","langchain","prompt","genai","agente","agent","chatbot","conversac","nlu","voice","voz","fintech","credito","cobro","mora","claude","gemini"],
+        role: ["ai","ml","llm","backend","engineer","data","architect","genai"],
+        rtpls: [
+          { m: ["llm","openai","gpt","langchain","prompt","genai","agente","agent","claude"], f: k => "Tu expertise en " + k + " es el core de los agentes de voz que se muestran" },
+          { m: ["chatbot","conversac","nlu","voice","voz"], f: k => "Agentes conversacionales con " + k + " — caso real en producción" },
+          { m: ["fintech","credito","cobro","mora"], f: _ => "Caso fintech directo: recupero de mora con voz + LLMs" },
+          { m: [], f: _ => "LLMs + voice agents en producción — caso real de cobranza" },
+        ],
+      },
+    };
+
+    function getReason(id, text) {
+      const p = PROFILES[id];
+      if (!p) return "Charla relevante para tu perfil";
+      for (const t of p.rtpls) {
+        for (const k of t.m) { if (text.includes(k)) return t.f(k); }
+      }
+      return p.rtpls[p.rtpls.length - 1].f();
+    }
+
+    const FEATURE_ORDER = [
+      "ml", "data", "genai", "voice", "ux", "legal", "automation",
+      "fintech", "backend", "mobile", "cloud", "product",
+    ];
+
+    const FEATURE_RULES = [
+      { dim: "ml", terms: ["ml", "machine learning", "modelo", "algoritm", "deep", "neural", "xgboost", "pytorch", "tensor"] },
+      { dim: "data", terms: ["data", "analytic", "estadistic", "feature", "snowflak", "dynamo"] },
+      { dim: "genai", terms: ["llm", "ia", "ai", "genai", "openai", "gpt", "prompt", "langchain", "agente", "agent"] },
+      { dim: "voice", terms: ["voice", "voz", "speech", "audio", "nlu", "nlp", "chatbot", "conversac"] },
+      { dim: "ux", terms: ["ux", "ui", "design", "diseño", "figma", "accesib", "frontend"] },
+      { dim: "legal", terms: ["legal", "compliance", "regulat", "audit", "risk", "normat", "policy", "contrato"] },
+      { dim: "automation", terms: ["rpa", "automat", "proceso", "robot", "ops", "operacion"] },
+      { dim: "fintech", terms: ["fintech", "banco", "financ", "credito", "cobro", "mora"] },
+      { dim: "backend", terms: ["backend", "api", "microserv", "engineer", "arquitectura", "architecture"] },
+      { dim: "mobile", terms: ["mobile", "ios", "android"] },
+      { dim: "cloud", terms: ["aws", "lambda", "cloud", "devops", "mcp"] },
+      { dim: "product", terms: ["product", "pm", "management", "negocio", "business"] },
+    ];
+
+    const TALK_TOWER = {
+      promos: {
+        ml: 1.0, data: 1.0, genai: 0.8, voice: 0.1, ux: 0.2, legal: 0.0,
+        automation: 0.2, fintech: 0.9, backend: 0.8, mobile: 0.2, cloud: 0.9, product: 0.4,
+      },
+      voice_t: {
+        ml: 0.3, data: 0.2, genai: 0.4, voice: 1.0, ux: 1.0, legal: 0.0,
+        automation: 0.2, fintech: 0.7, backend: 0.3, mobile: 0.9, cloud: 0.2, product: 0.8,
+      },
+      legal: {
+        ml: 0.1, data: 0.3, genai: 0.2, voice: 0.0, ux: 0.2, legal: 1.0,
+        automation: 1.0, fintech: 0.4, backend: 0.2, mobile: 0.0, cloud: 0.2, product: 0.7,
+      },
+      mora: {
+        ml: 0.6, data: 0.5, genai: 1.0, voice: 0.9, ux: 0.3, legal: 0.1,
+        automation: 0.3, fintech: 1.0, backend: 0.7, mobile: 0.3, cloud: 0.5, product: 0.5,
+      },
+    };
+
+    function toVector(features) {
+      return FEATURE_ORDER.map(d => Number(features[d] || 0));
+    }
+
+    function normalize(vec) {
+      const norm = Math.sqrt(vec.reduce((acc, v) => acc + v * v, 0));
+      if (!norm) return vec;
+      return vec.map(v => v / norm);
+    }
+
+    function dot(a, b) {
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+      return sum;
+    }
+
+    function buildUserTower(role, skills) {
+      const text = (role + " " + skills).toLowerCase();
+      const feats = {};
+      FEATURE_ORDER.forEach(d => { feats[d] = 0; });
+
+      for (const rule of FEATURE_RULES) {
+        for (const term of rule.terms) {
+          if (text.includes(term)) feats[rule.dim] += 1;
+        }
+      }
+
+      // Fallback suave para evitar vector nulo cuando hay muy poca señal.
+      const hasSignal = FEATURE_ORDER.some(d => feats[d] > 0);
+      if (!hasSignal) {
+        feats.product = 1;
+        feats.backend = 1;
+      }
+
+      return normalize(toVector(feats));
+    }
+
+    function buildTalkTower(id) {
+      if (TALK_TOWER[id]) return normalize(toVector(TALK_TOWER[id]));
+
+      // Fallback para charlas nuevas: inferimos embedding usando keywords del perfil.
+      const feats = {};
+      FEATURE_ORDER.forEach(d => { feats[d] = 0; });
+      const p = PROFILES[id];
+      if (!p) return normalize(toVector(feats));
+
+      for (const kw of [...p.kwds, ...p.role]) {
+        for (const rule of FEATURE_RULES) {
+          for (const term of rule.terms) {
+            if (kw.includes(term) || term.includes(kw)) feats[rule.dim] += 0.3;
+          }
+        }
+      }
+
+      return normalize(toVector(feats));
+    }
+
+    function computeScores(role, skills) {
+      const userVec = buildUserTower(role, skills);
+      const out = {};
+      for (const id of Object.keys(PROFILES)) {
+        const talkVec = buildTalkTower(id);
+        const sim = Math.max(0, dot(userVec, talkVec));
+        out[id] = Math.min(100, Math.round(40 + sim * 60));
+      }
+      return out;
+    }
+
+    function recommend(role, skills, name, snry, talks) {
+      const scores = computeScores(role, skills);
+      const text = (role + " " + skills).toLowerCase();
+      const ranked = Object.entries(scores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([id, score], i) => ({
+          id, score, rank: i + 1,
+          talk: (talks || TALKS_FALLBACK).find(t => t.id === id),
+          razon: getReason(id, text),
+        }));
+      return {
+        nombre_display: name || role || "Anónimo",
+        resumen_perfil: (role + " · " + snry).slice(0, 52),
+        recomendaciones: ranked,
+      };
+    }
+
+    function Bar({ score, color, delay }) {
+      const [w, setW] = useState(0);
+      useEffect(() => {
+        const t = setTimeout(() => setW(score), delay || 100);
+        return () => clearTimeout(t);
+      }, [score]);
+      return E("div", { className: "bar-track" },
+        E("div", { className: "bar-fill", style: { width: w + "%", background: color } })
+      );
+    }
+
+    const ini = n => (n || "?").trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
+    const Topbar = () => E("div", { className: "topbar" },
+      E("span", { className: "nx-wordmark" }, "NaranjaX"),
+      E("span", { className: "powered" }, "27 mayo · 4° edición")
+    );
+
+    const Hero = ({ sub }) => E("div", { className: "hero" },
+      E("img", {
+        src: T4I_LOGO,
+        className: "t4i-logo",
+        alt: "Tech4Impact",
+        onError: e => { e.target.style.display = "none"; },
+      }),
+      E("p", { className: "sub" }, sub)
+    );
+
+    function App() {
+      const [mode,  setMode]  = useState("linkedin");
+      const [url,   setUrl]   = useState("");
+      const [name,  setName]  = useState("");
+      const [role,  setRole]  = useState("");
+      const [selectedSkills, setSelectedSkills] = useState([]);
+      const [customSkills,   setCustomSkills]   = useState("");
+      const [snry,  setSnry]  = useState("SSR");
+      const [phase, setPhase] = useState("input");
+      const [res,   setRes]   = useState(null);
+      const [talks,     setTalks]     = useState(TALKS_FALLBACK);
+      const [skillsList, setSkillsList] = useState(SKILLS_FALLBACK);
+
+      useEffect(() => {
+        fetch('talks.md').then(r => r.text()).then(md => {
+          const parsed = parseTalks(md);
+          if (parsed.length) setTalks(parsed);
+        }).catch(() => {});
+        fetch('skills.md').then(r => r.text()).then(md => {
+          const parsed = parseSkills(md);
+          if (parsed.length) setSkillsList(parsed);
+        }).catch(() => {});
+      }, []);
+
+      const toggleSkill = s => setSelectedSkills(prev =>
+        prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+      );
+
+      const exName = v => {
+        const m = v.match(/linkedin\.com\/in\/([^/?&#\s]+)/);
+        return m ? m[1].split(/[-_]/).filter(Boolean).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ") : "";
+      };
+
+      const onUrl = v => { setUrl(v); const n = exName(v); if (n && !name) setName(n); };
+      const skillsText = selectedSkills.join(" ") + " " + customSkills;
+      const canGo = name.trim().length > 1 && role.trim().length > 1 && (selectedSkills.length > 0 || customSkills.trim().length > 3);
+
+      const go = () => {
+        setPhase("loading");
+        setTimeout(() => { setRes(recommend(role, skillsText, name, snry, talks)); setPhase("results"); }, 1500);
+      };
+
+      const reset = () => {
+        setPhase("input"); setRes(null);
+        setUrl(""); setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("SSR");
+      };
+
+      const tabSt = t => ({
+        flex: 1, padding: "13px 8px", fontSize: "13px", fontWeight: "600",
+        fontFamily: "'Gibson-Semibold',sans-serif", letterSpacing: ".06em",
+        textTransform: "uppercase", textAlign: "center", cursor: "pointer",
+        border: "none", transition: "all .2s",
+        background: mode === t ? "rgba(255,94,0,.08)" : "transparent",
+        color: mode === t ? "#ff5e00" : "rgba(180,150,255,.4)",
+        borderBottom: mode === t ? "2px solid #ff5e00" : "2px solid transparent",
+      });
+
+      const snrySt = s => ({
+        padding: "7px 14px", borderRadius: "50px", fontSize: "12px", cursor: "pointer",
+        fontFamily: "'Gibson-Semibold',sans-serif", fontWeight: "600",
+        letterSpacing: ".04em", transition: "all .2s",
+        border:      snry === s ? "1px solid #ff5e00"           : "1px solid rgba(115,33,166,.4)",
+        background:  snry === s ? "linear-gradient(90deg,#ff5e00,#7321a6)" : "rgba(115,33,166,.12)",
+        color:       snry === s ? "#fff"                         : "rgba(180,150,255,.55)",
+        boxShadow:   snry === s ? "0 0 12px #ff5e0066"           : "none",
+      });
+
+      /* ── LOADING ── */
+      if (phase === "loading") return E("div", { style: { width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", alignItems: "center" } },
+        E(Topbar),
+        E(Hero, { sub: "Analizando tu perfil con el motor de recomendación..." }),
+        E("div", { className: "card", style: { width: "100%" } },
+          E("div", { className: "loading-wrap" },
+            E("div", { className: "dots" }, [0,1,2].map(i => E("div", { key: i, className: "dot" }))),
+            E("p", { className: "ld-txt" }, "Proyectando embedding de usuario..."),
+            E("p", { className: "ld-txt", style: { color: "rgba(180,150,255,.2)" } }, "Calculando dot product con el catálogo...")
+          )
+        )
+      );
+
+      /* ── RESULTS ── */
+      if (phase === "results" && res) return E("div", { style: { width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", alignItems: "center" } },
+        E(Topbar),
+        E(Hero, { sub: E("span", null, "Tu agenda ", E("em", null, "personalizada"), " para hoy") }),
+        E("div", { className: "card", style: { width: "100%" } },
+          E("div", { className: "res-wrap" },
+            E("div", { className: "chip" },
+              E("div", { className: "av" }, ini(res.nombre_display)),
+              E("div", { style: { flex: 1, minWidth: 0 } },
+                E("div", { className: "pname" }, res.nombre_display),
+                E("div", { className: "prole" }, res.resumen_perfil)
+              )
+            ),
+            E("p", { className: "sec-lbl" }, "Charlas rankeadas para vos"),
+            res.recomendaciones.map((r, i) =>
+              E("div", { key: r.id, className: "tk" + (r.rank === 1 ? " r1" : "") },
+                E("div", { className: "tk-top" },
+                  E("span", { className: "rk", style: { color: RANK_COLORS[i] } }, "#" + r.rank),
+                  E("span", { className: "tk-title" }, r.talk?.title || r.id),
+                  E("span", { className: "sc", style: { color: RANK_COLORS[i] } }, r.score)
+                ),
+                E(Bar, { score: r.score, color: RANK_BAR[i], delay: i * 180 + 80 }),
+                E("p", { className: "reason" }, r.razon)
+              )
+            ),
+            E("button", { className: "again", onClick: reset }, "← Probar con otro perfil")
+          )
+        ),
+        E("p", { className: "ev-tag" }, "Tech4Impact by NaranjaX")
+      );
+
+      /* ── INPUT ── */
+      return E("div", { style: { width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", alignItems: "center" } },
+        E(Topbar),
+        E(Hero, { sub: E("span", null, "¿Qué charla ", E("em", null, "te recomienda"), " el motor?") }),
+        E("div", { className: "card", style: { width: "100%" } },
+          E("div", { className: "tabs" },
+            E("button", { style: tabSt("linkedin"), onClick: () => setMode("linkedin") }, "LinkedIn"),
+            E("button", { style: tabSt("manual"),   onClick: () => setMode("manual")   }, "Manual")
+          ),
+          E("div", { className: "form-wrap" },
+            mode === "linkedin" && E("div", null,
+              E("label", { className: "lbl" }, "URL de LinkedIn"),
+              E("input", { className: "inp", placeholder: "linkedin.com/in/tu-nombre", value: url, onChange: e => onUrl(e.target.value) }),
+              E("p", { className: "hint" }, "Extraemos tu nombre del URL automáticamente.")
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Nombre *"),
+              E("input", { className: "inp", placeholder: "Tu nombre", value: name, onChange: e => setName(e.target.value) })
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Rol actual *"),
+              E("input", { className: "inp", placeholder: "ej: ML Engineer, Backend Dev, PM", value: role, onChange: e => setRole(e.target.value) })
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Skills e intereses *"),
+              E("div", { className: "skills-grid" },
+                skillsList.map(s =>
+                  E("button", {
+                    key: s,
+                    className: "skill-btn" + (selectedSkills.includes(s) ? " active" : ""),
+                    onClick: () => toggleSkill(s),
+                  }, s)
+                )
+              ),
+              E("input", {
+                className: "inp",
+                placeholder: "Otras skills (opcional)...",
+                value: customSkills,
+                onChange: e => setCustomSkills(e.target.value),
+                style: { marginTop: "8px", fontSize: "12px" },
+              }),
+              selectedSkills.length > 0 && E("p", { className: "skills-hint" },
+                selectedSkills.length + " skill" + (selectedSkills.length > 1 ? "s" : "") + " seleccionada" + (selectedSkills.length > 1 ? "s" : "")
+              )
+            ),
+            E("div", null,
+              E("label", { className: "lbl" }, "Seniority"),
+              E("div", { className: "snry-wrap" }, SNRY.map(s =>
+                E("button", { key: s, style: snrySt(s), onClick: () => setSnry(s) }, s)
+              ))
+            ),
+            E("button", { className: "go", disabled: !canGo, onClick: go }, "Ver mi recomendación")
+          )
+        ),
+        E("p", { className: "ev-tag" }, "27 de mayo · NaranjaX")
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(E(App));
+  </script>
+</body>
+</html>
