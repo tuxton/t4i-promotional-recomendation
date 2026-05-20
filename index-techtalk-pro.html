@@ -468,7 +468,7 @@
     .share-row {
       display: flex;
       gap: 8px;
-      justify-content: flex-start;
+      justify-content: center;
       margin: 10px 0 0 0;
       flex-wrap: wrap;
     }
@@ -1395,7 +1395,7 @@
       const [role,  setRole]  = useState("");
       const [selectedSkills, setSelectedSkills] = useState([]);
       const [customSkills,   setCustomSkills]   = useState("");
-      const [snry,  setSnry]  = useState("SSR");
+      const [snry,  setSnry]  = useState("");
       const [phase, setPhase] = useState("input");
       const [res,   setRes]   = useState(null);
       const [talks,     setTalks]     = useState(TALKS_FALLBACK);
@@ -1448,7 +1448,7 @@
 
       const reset = () => {
         setPhase("input"); setRes(null);
-        setUrl(""); setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("SSR");
+        setUrl(""); setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("");
       };
 
       const SITE_URL = "https://t4i-promotional-recomendation.vercel.app/index-techtalk-pro.html";
