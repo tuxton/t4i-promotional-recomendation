@@ -2,13 +2,31 @@
 
 Motor de recomendación de charlas para el evento Tech4Impact by NaranjaX (27 de mayo).
 
-## Uso
+## Uso local
 
-Abrí `index.html` directamente en el browser — no necesita servidor ni dependencias.
+Abrí `index-techtalk-pro.html` directamente en el browser — no necesita servidor ni dependencias.
 
-## Para deployar en el sitio del evento
+## Deploy en Vercel (v0)
 
-1. Copiá `index.html` a tu servidor o CDN
+### Opción A — Drag & drop
+1. Zipear el directorio completo
+2. Ir a [vercel.com/new](https://vercel.com/new) y soltar el zip
+3. Vercel detecta el sitio estático automáticamente y deploy listo
+
+### Opción B — GitHub
+1. `git init && git add . && git commit -m "init"`
+2. Crear repo en GitHub y hacer push
+3. Conectar el repo en [vercel.com/new](https://vercel.com/new)
+4. Framework preset: **Other** (sitio estático sin build)
+5. Confirmar deploy
+
+La raíz `/` sirve `index-techtalk-pro.html` (configurado en `vercel.json`).  
+Los archivos `talks.md` y `skills.md` se cargan automáticamente.  
+Si el fetch falla (ej: CORS en dev local sin servidor), la app usa los datos embebidos como fallback.
+
+## Para deployar en el sitio del evento (CDN propio)
+
+1. Copiá todos los archivos (`index-techtalk-pro.html`, `talks.md`, `skills.md`) a tu servidor o CDN
 2. La fuente `Gibson-Semibold` se carga automáticamente si está disponible en el dominio
 3. El logo de Tech4Impact se carga desde `tech4impact.naranjax.com/assets/...`
 
