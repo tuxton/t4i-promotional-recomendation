@@ -768,6 +768,17 @@
       color: rgba(255,255,255,.95);
       text-shadow: 0 1px 0 rgba(0,0,0,.3);
     }
+    .gh-footer {
+      text-align: center;
+      padding: 18px 0 24px;
+      font-size: 11px;
+      color: rgba(255,255,255,.25);
+    }
+    .gh-footer a {
+      color: rgba(180,150,255,.45);
+      text-decoration: none;
+    }
+    .gh-footer a:hover { color: rgba(180,150,255,.8); }
   </style>
 </head>
 <body>
@@ -778,6 +789,9 @@
     <div class="blob b3"></div>
   </div>
   <div id="root"></div>
+  <footer class="gh-footer">
+    <a href="https://github.com/tuxton/t4i-promotional-recomendation" target="_blank" rel="noopener noreferrer">Ver código fuente en GitHub</a>
+  </footer>
 
   <script>
     const { useState, useEffect, useRef } = React;
