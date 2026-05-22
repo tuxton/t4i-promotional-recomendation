@@ -1,58 +1,64 @@
 # Tech4Impact — Recomendador de Charlas
 
-Motor de recomendación de charlas para el evento Tech4Impact by NaranjaX (27 de mayo).
+App web estática que recomienda charlas del evento **Tech4Impact by NaranjaX** (27 de mayo de 2026) según el perfil del asistente: rol, seniority y skills.
 
-## Uso local
+🔗 **Demo en vivo:** https://t4i-promotional-recomendation.vercel.app
 
-Abrí `index-techtalk-pro.html` directamente en el browser — no necesita servidor ni dependencias.
+---
 
-## Deploy en Vercel (v0)
+## Estructura del proyecto
 
-### Opción A — Drag & drop
-1. Zipear el directorio completo
-2. Ir a [vercel.com/new](https://vercel.com/new) y soltar el zip
-3. Vercel detecta el sitio estático automáticamente y deploy listo
-
-### Opción B — GitHub
-1. `git init && git add . && git commit -m "init"`
-2. Crear repo en GitHub y hacer push
-3. Conectar el repo en [vercel.com/new](https://vercel.com/new)
-4. Framework preset: **Other** (sitio estático sin build)
-5. Confirmar deploy
-
-La raíz `/` sirve `index-techtalk-pro.html` (configurado en `vercel.json`).  
-Los archivos `talks.md` y `skills.md` se cargan automáticamente.  
-Si el fetch falla (ej: CORS en dev local sin servidor), la app usa los datos embebidos como fallback.
-
-## Para deployar en el sitio del evento (CDN propio)
-
-1. Copiá todos los archivos (`index-techtalk-pro.html`, `talks.md`, `skills.md`) a tu servidor o CDN
-2. La fuente `Gibson-Semibold` se carga automáticamente si está disponible en el dominio
-3. El logo de Tech4Impact se carga desde `tech4impact.naranjax.com/assets/...`
-
-## Personalización
-
-### Agregar / cambiar charlas
-Editá el array `TALKS` y el objeto `PROFILES` en el `<script>`:
-
-```js
-const TALKS = [
-  { id: "mi-charla", title: "Título de la charla" },
-  // ...
-];
+```
+index.html      → App principal (React 18 UMD, sin build)
+talks.md        → Lista de charlas disponibles
+skills.md       → Lista de skills seleccionables en el formulario
+vercel.json     → Configuración de Vercel (headers, rewrite)
 ```
 
-Y agregá el perfil de keywords correspondiente en `PROFILES`.
+---
 
-### Cambiar colores
-Las variables clave en el CSS:
-- Fondo: `#130a2a` + gradientes radiales
-- Naranja: `#ff5e00`
-- Purple: `#7321a6`
-- Botón glow: `box-shadow: 0 0 25px #ff5e0080, ...`
+## Cómo correrlo localmente
+
+Abrí `index.html` directamente en el browser — no necesita servidor, build ni dependencias.
+
+> Si los archivos `talks.md` / `skills.md` no cargan (CORS en file://), la app usa los datos embebidos como fallback.
+
+---
+
+## Cómo agregar o editar charlas
+
+Editá `talks.md` — una charla por línea con el formato:
+
+```
+## id | Título de la charla
+```
+
+El ID se usa internamente para el motor de recomendación. El título es lo que ve el usuario.
+
+## Cómo agregar o editar skills
+
+Editá `skills.md` — una skill por línea con guión al inicio:
+
+```
+- Nombre de la skill
+```
+
+---
+
+## Deploy
+
+El proyecto está conectado a **Vercel** vía este repositorio de GitHub. Cualquier push a `main` dispara un redeploy automático.
+
+Para hacer un deploy manual desde cero:
+
+1. Clonar el repo
+2. Conectar en [vercel.com/new](https://vercel.com/new) → Framework preset: **Other**
+3. Confirmar deploy (no hay build step)
+
+---
 
 ## Stack
 
-- React 18 (UMD, sin build)
-- CSS vanilla
-- Scoring 100% client-side (no API, funciona offline)
+- **React 18** vía CDN (UMD) — sin JSX, sin bundler
+- **CSS vanilla** — todo en un `<style>` inline
+- **Scoring client-side** — no hay API ni backend, funciona offline
