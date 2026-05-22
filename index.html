@@ -153,11 +153,6 @@
       overflow: hidden;
     }
 
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid rgba(139,60,210,.2);
-    }
-
     .form-wrap {
       padding: 22px;
       display: flex;
@@ -773,6 +768,17 @@
       color: rgba(255,255,255,.95);
       text-shadow: 0 1px 0 rgba(0,0,0,.3);
     }
+    .gh-footer {
+      text-align: center;
+      padding: 18px 0 24px;
+      font-size: 11px;
+      color: rgba(255,255,255,.25);
+    }
+    .gh-footer a {
+      color: rgba(180,150,255,.45);
+      text-decoration: none;
+    }
+    .gh-footer a:hover { color: rgba(180,150,255,.8); }
   </style>
 </head>
 <body>
@@ -783,6 +789,9 @@
     <div class="blob b3"></div>
   </div>
   <div id="root"></div>
+  <footer class="gh-footer">
+    <a href="https://github.com/tuxton/t4i-promotional-recomendation" target="_blank" rel="noopener noreferrer">Ver código fuente en GitHub</a>
+  </footer>
 
   <script>
     const { useState, useEffect, useRef } = React;
@@ -1085,7 +1094,7 @@
         name: "Tonga",
         role: "IT Manager",
         snry: "Manager",
-        skills: ["DevOps / Cloud", "APIs / Microservicios", "Arquitectura de Software", "Product Management"],
+        skills: ["DevOps / Cloud", "APIs / Microservicios", "Arquitectura de Software", "Product Management", "RPA / Automatización"],
       },
       {
         id: "dany",
@@ -1389,8 +1398,6 @@
 
     // --- Estado principal ---
     function App() {
-      const [mode,  setMode]  = useState("linkedin");
-      const [url,   setUrl]   = useState("");
       const [name,  setName]  = useState("");
       const [role,  setRole]  = useState("");
       const [selectedSkills, setSelectedSkills] = useState([]);
@@ -1423,8 +1430,6 @@
       );
 
       const applyDemoProfile = profile => {
-        setMode("manual");
-        setUrl("");
         setName(profile.name);
         setRole(profile.role);
         setSnry(profile.snry);
@@ -1432,12 +1437,6 @@
         setCustomSkills(profile.skills.filter(s => !skillsList.includes(s)).join(", "));
       };
 
-      const exName = v => {
-        const m = v.match(/linkedin\.com\/in\/([^/?&#\s]+)/);
-        return m ? m[1].split(/[-_]/).filter(Boolean).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ") : "";
-      };
-
-      const onUrl = v => { setUrl(v); const n = exName(v); if (n && !name) setName(n); };
       const skillsText = selectedSkills.join(" ") + " " + customSkills;
       const canGo = name.trim().length > 1 && role.trim().length > 1 && (selectedSkills.length > 0 || customSkills.trim().length > 3);
 
@@ -1448,7 +1447,7 @@
 
       const reset = () => {
         setPhase("input"); setRes(null);
-        setUrl(""); setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("");
+        setName(""); setRole(""); setSelectedSkills([]); setCustomSkills(""); setSnry("");
       };
 
       const SITE_URL = "https://t4i-promotional-recomendation.vercel.app/index-techtalk-pro.html";
@@ -1471,15 +1470,7 @@
         }
       }
 
-      const tabSt = t => ({
-        flex: 1, padding: "13px 8px", fontSize: "13px", fontWeight: "600",
-        fontFamily: "'Gibson-Semibold',sans-serif", letterSpacing: ".06em",
-        textTransform: "uppercase", textAlign: "center", cursor: "pointer",
-        border: "none", transition: "all .2s",
-        background: mode === t ? "rgba(255,94,0,.08)" : "transparent",
-        color: mode === t ? "#ff5e00" : "rgba(180,150,255,.4)",
-        borderBottom: mode === t ? "2px solid #ff5e00" : "2px solid transparent",
-      });
+
 
       const snrySt = s => ({
         padding: "7px 14px", borderRadius: "50px", fontSize: "12px", cursor: "pointer",
@@ -1753,21 +1744,12 @@
         E(Topbar),
         E(Hero, { sub: E("span", null, "¿Qué charla ", E("em", null, "te recomienda"), " el motor?") }),
         E("div", { className: "card", style: { width: "100%" } },
-          E("div", { className: "tabs" },
-            E("button", { style: tabSt("linkedin"), onClick: () => setMode("linkedin") }, "LinkedIn"),
-            E("button", { style: tabSt("manual"),   onClick: () => setMode("manual")   }, "Manual")
-          ),
           E("div", { className: "form-wrap" },
             E("div", { className: "demo-box" },
               E("p", { className: "pill" }, "Demo instantánea · story mode"),
               E("div", { className: "demo-btns" }, DEMO_PROFILES.map(p =>
                 E("button", { key: p.id, className: "demo-btn", onClick: () => applyDemoProfile(p) }, p.label)
               ))
-            ),
-            mode === "linkedin" && E("div", null,
-              E("label", { className: "lbl" }, "URL de LinkedIn"),
-              E("input", { className: "inp", placeholder: "linkedin.com/in/tu-nombre", value: url, onChange: e => onUrl(e.target.value) }),
-              E("p", { className: "hint" }, "Extraemos tu nombre del URL automáticamente.")
             ),
             E("div", null,
               E("label", { className: "lbl" }, "Nombre *"),
